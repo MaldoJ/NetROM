@@ -1,4 +1,4 @@
-import type mariadb from 'mariadb';
+import type { Connection } from 'mariadb';
 import type { PlayerNode } from '../../domain/entities.js';
 import type { PlayerNodeRepository } from '../../application/ports/repositories.js';
 
@@ -19,7 +19,7 @@ type PlayerNodeRow = {
 };
 
 export class MariaDbPlayerNodeRepository implements PlayerNodeRepository {
-  constructor(private readonly connection: mariadb.Connection) {}
+  constructor(private readonly connection: Connection) {}
 
   async create(node: PlayerNode): Promise<void> {
     await this.connection.query(
