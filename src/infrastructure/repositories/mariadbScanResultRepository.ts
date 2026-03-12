@@ -1,4 +1,4 @@
-import type mariadb from 'mariadb';
+import type { Connection } from 'mariadb';
 import type { ScanResult } from '../../domain/entities.js';
 import type { ScanResultRepository } from '../../application/ports/repositories.js';
 
@@ -12,7 +12,7 @@ type ScanResultRow = {
 };
 
 export class MariaDbScanResultRepository implements ScanResultRepository {
-  constructor(private readonly connection: mariadb.Connection) {}
+  constructor(private readonly connection: Connection) {}
 
   async create(scanResult: ScanResult): Promise<void> {
     await this.connection.query(

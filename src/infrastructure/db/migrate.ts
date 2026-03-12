@@ -1,14 +1,14 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type mariadb from 'mariadb';
+import type { Connection, PoolConnection } from 'mariadb';
 import { createDbPool } from './mariadb.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const migrationDir = path.join(__dirname, 'migrations');
 
-async function ensureMigrationsTable(connection: mariadb.PoolConnection): Promise<void> {
+async function ensureMigrationsTable(connection: PoolConnection): Promise<void> {
   await connection.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -20,7 +20,7 @@ async function ensureMigrationsTable(connection: mariadb.PoolConnection): Promis
 
 async function run(): Promise<void> {
   const pool = createDbPool();
-  let connection: mariadb.PoolConnection | undefined;
+  let connection: PoolConnection | undefined;
 
   try {
     connection = await pool.getConnection();
