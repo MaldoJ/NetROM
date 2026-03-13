@@ -9,6 +9,10 @@ describe('command router', () => {
   it('supports mvp shell commands', () => {
     expect(isSupportedCommand('.sh status')).toBe(true);
     expect(isSupportedCommand('.sh leaderboard')).toBe(true);
+    expect(isSupportedCommand('.sh upgrade')).toBe(true);
+    expect(isSupportedCommand('.sh upgrade modem')).toBe(true);
+    expect(isSupportedCommand('.sh   upgrade   storage')).toBe(true);
+    expect(isSupportedCommand('.sh upgrade ram')).toBe(false);
     expect(isSupportedCommand('.sh market')).toBe(false);
   });
 });
