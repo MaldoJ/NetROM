@@ -82,4 +82,23 @@ export class MariaDbTaskRepository {
       activeTo: new Date(row.active_to),
     }));
   }
+
+  async findActiveByScope(scope: TaskDefinition['scope'], now: Date): Promise<TaskDefinition[]> {
+    const rows = await this.connection.query<TaskRow[]>(
+      `SELECT id, scope, task_key, objective_value, reward_json, active_from, active_to
+       FROM tasks
+       WHERE scope = ? AND active_from <= ? AND active_to >= ?`,
+      [scope, now, now],
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      scope: row.scope,
+      key: row.task_key,
+      objectiveValue: row.objective_value,
+      reward: JSON.parse(row.reward_json) as TaskDefinition['reward'],
+      activeFrom: new Date(row.active_from),
+      activeTo: new Date(row.active_to),
+    }));
+  }
 }
