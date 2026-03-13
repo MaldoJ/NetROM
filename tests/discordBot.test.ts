@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCollectionResponse, formatFactionResponse, formatFactionShopResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatCollectionResponse, formatFactionContractsResponse, formatFactionResponse, formatFactionShopResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
 import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
@@ -162,5 +162,27 @@ describe('formatFactionShopResponse', () => {
     expect(message).toContain('Faction shop preview');
     expect(message).toContain('**Helix Syndicate** | Rank 2 | Access UNLOCKED');
     expect(message).toContain('**Null Sector** | Rank 1 | Access LOCKED');
+  });
+});
+
+
+describe('formatFactionContractsResponse', () => {
+  it('shows locked board state when no factions are initialized', () => {
+    const message = formatFactionContractsResponse([]);
+
+    expect(message).toContain('No faction standing found yet');
+  });
+
+  it('renders available contract tier by rank', () => {
+    const message = formatFactionContractsResponse([
+      { faction: 'NULL_SECTOR', reputation: 15, rank: 1 },
+      { faction: 'HELIX_SYNDICATE', reputation: 220, rank: 3 },
+      { faction: 'LATTICE_COLLECTIVE', reputation: 145, rank: 2 },
+    ]);
+
+    expect(message).toContain('Faction contract board');
+    expect(message).toContain('**Helix Syndicate** | Available Tier III contracts | Next unlock: MAX');
+    expect(message).toContain('**Lattice Collective** | Available Tier II contracts | Next unlock: Rank 3');
+    expect(message).toContain('**Null Sector** | Available Tier I contracts | Next unlock: Rank 2');
   });
 });
