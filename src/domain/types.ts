@@ -19,3 +19,7 @@ export type ResourceWallet = {
   cycles: number;
   parts: number;
 };
+
+export type TaskScope = 'DAILY' | 'WEEKLY';
+
+export type TaskKey = 'RUN_SCANS' | 'CLAIM_REWARDS' | 'UPGRADE_NODE';

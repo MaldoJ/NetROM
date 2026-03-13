@@ -46,4 +46,33 @@ describe('GameEngine', () => {
 
     expect(engine.rollCollectible('plr_1')).toBeNull();
   });
+
+  it('creates deterministic daily tasks', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.0]));
+
+    const task = engine.createActiveTask('DAILY', now);
+
+    expect(task.scope).toBe('DAILY');
+    expect(task.key).toBe('RUN_SCANS');
+    expect(task.objectiveValue).toBe(3);
+    expect(task.activeTo.toISOString()).toBe('2026-03-10T23:59:59.999Z');
+  });
+
+  it('completes task progress and applies reward', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.5]));
+    const { player, node } = engine.onboard('123', 'sysop', 'alpha-node', 'RELAY_NODE');
+    const task = engine.createActiveTask('DAILY', now);
+
+    const base = engine.initializeTaskProgress(player.id, task);
+    const progressed = engine.advanceTaskProgress(base, task, task.objectiveValue, now);
+
+    expect(progressed.completedAt?.toISOString()).toBe(now.toISOString());
+
+    const rewarded = engine.applyTaskReward(node, player, task);
+    expect(rewarded.node.wallet.credits).toBe(node.wallet.credits + task.reward.credits);
+    expect(rewarded.node.wallet.parts).toBe(node.wallet.parts + task.reward.parts);
+    expect(rewarded.player.reputation).toBe(player.reputation + task.reward.reputation);
+  });
 });

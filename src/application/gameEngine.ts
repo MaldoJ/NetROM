@@ -1,8 +1,23 @@
-import type { DiscoveryType, NodeArchetype } from '../domain/types.js';
-import type { Collectible, Player, PlayerNode, ScanResult } from '../domain/entities.js';
+import type { DiscoveryType, NodeArchetype, TaskScope } from '../domain/types.js';
+import type {
+  Collectible,
+  Player,
+  PlayerNode,
+  PlayerTaskProgress,
+  ScanResult,
+  TaskDefinition,
+} from '../domain/entities.js';
 import { MathRandomSource, type RandomSource } from './random.js';
 
 const BASE_RESOURCES = { credits: 100, data: 25, cycles: 5, parts: 10 };
+const DAILY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
+  { scope: 'DAILY', key: 'RUN_SCANS', objectiveValue: 3, reward: { credits: 40, parts: 4, reputation: 15 } },
+  { scope: 'DAILY', key: 'CLAIM_REWARDS', objectiveValue: 2, reward: { credits: 55, parts: 2, reputation: 20 } },
+];
+const WEEKLY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
+  { scope: 'WEEKLY', key: 'RUN_SCANS', objectiveValue: 12, reward: { credits: 180, parts: 8, reputation: 80 } },
+  { scope: 'WEEKLY', key: 'UPGRADE_NODE', objectiveValue: 2, reward: { credits: 120, parts: 10, reputation: 95 } },
+];
 
 export class GameEngine {
   constructor(private readonly random: RandomSource = new MathRandomSource()) {}
@@ -80,7 +95,57 @@ export class GameEngine {
     return next;
   }
 
+  createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {
+    const pool = scope === 'DAILY' ? DAILY_TASKS : WEEKLY_TASKS;
+    const template = pool[Math.floor(this.random.next() * pool.length)];
+    const activeFrom = new Date(now);
+    const activeTo = new Date(now);
+    activeTo.setUTCHours(23, 59, 59, 999);
 
+    if (scope === 'WEEKLY') {
+      activeTo.setUTCDate(activeTo.getUTCDate() + 6);
+    }
+
+    return {
+      ...template,
+      id: `${scope.toLowerCase()}_${now.getTime()}`,
+      activeFrom,
+      activeTo,
+    };
+  }
+
+  initializeTaskProgress(playerId: string, task: TaskDefinition): PlayerTaskProgress {
+    return {
+      playerId,
+      taskId: task.id,
+      progressValue: 0,
+      completedAt: null,
+    };
+  }
+
+  advanceTaskProgress(progress: PlayerTaskProgress, task: TaskDefinition, increment: number, now: Date = new Date()): PlayerTaskProgress {
+    if (progress.completedAt) {
+      return progress;
+    }
+
+    const nextValue = Math.min(progress.progressValue + increment, task.objectiveValue);
+    return {
+      ...progress,
+      progressValue: nextValue,
+      completedAt: nextValue >= task.objectiveValue ? now : null,
+    };
+  }
+
+  applyTaskReward(node: PlayerNode, player: Player, task: TaskDefinition): { node: PlayerNode; player: Player } {
+    const nextNode = structuredClone(node);
+    const nextPlayer = structuredClone(player);
+
+    nextNode.wallet.credits += task.reward.credits;
+    nextNode.wallet.parts += task.reward.parts;
+    nextPlayer.reputation += task.reward.reputation;
+
+    return { node: nextNode, player: nextPlayer };
+  }
 
   rollCollectible(playerId: string): Collectible | null {
     if (this.random.next() >= 0.15) return null;
