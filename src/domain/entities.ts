@@ -1,4 +1,4 @@
-import type { DiscoveryType, Era, NodeArchetype, ResourceWallet } from './types.js';
+import type { DiscoveryType, Era, NodeArchetype, ResourceWallet, TaskKey, TaskScope } from './types.js';
 
 export interface Player {
   id: string;
@@ -38,4 +38,25 @@ export interface Collectible {
   rarity: 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC';
   name: string;
   acquiredAt: Date;
+}
+
+export interface TaskDefinition {
+  id: string;
+  scope: TaskScope;
+  key: TaskKey;
+  objectiveValue: number;
+  reward: {
+    credits: number;
+    parts: number;
+    reputation: number;
+  };
+  activeFrom: Date;
+  activeTo: Date;
+}
+
+export interface PlayerTaskProgress {
+  playerId: string;
+  taskId: string;
+  progressValue: number;
+  completedAt: Date | null;
 }
