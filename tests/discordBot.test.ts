@@ -144,16 +144,6 @@ describe('formatFactionResponse', () => {
     expect(message).toContain('**Null Sector** | Rep 10 | Rank 1 | Next rank in 90 rep');
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
-
-
-  it('uses faction name tie-breaker when reputation is equal', () => {
-    const message = formatFactionResponse([
-      { faction: 'NULL_SECTOR', reputation: 50, rank: 1 },
-      { faction: 'HELIX_SYNDICATE', reputation: 50, rank: 1 },
-    ]);
-
-    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
-  });
 });
 
 

@@ -606,7 +606,10 @@ export function formatFactionResponse(standings: Array<{ faction: Faction; reput
     return 'No faction standing found yet. Complete contracts to begin progression.';
   }
 
-  const lines = sortFactionStandings(standings).map((entry) => {
+  const lines = standings
+    .slice()
+    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
+    .map((entry) => {
       const repNeeded = reputationToNextRank(entry.reputation);
       return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
     });
