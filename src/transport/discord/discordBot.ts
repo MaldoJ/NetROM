@@ -3,6 +3,7 @@ import {
   Client,
   GatewayIntentBits,
   Message,
+  type ThreadChannel,
   type TextChannel,
 } from 'discord.js';
 import { GameEngine } from '../../application/gameEngine.js';
@@ -92,7 +93,7 @@ export function createDiscordBotClient(): Client {
       }
 
       if (threadOnlyCommands.has(content.split(' ').slice(0, 2).join(' '))) {
-        const activeSession = await sessions.findActiveByPlayerId(existingPlayer.id);
+        const activeSession = await ensureActiveSessionThread(existingPlayer.id, sessions, message);
         if (!activeSession) {
           await message.reply('No active private session. Run `.sh resume` in the core channel to recover one.');
           return;
@@ -530,6 +531,34 @@ async function handleResume(
   });
 
   await message.reply(`Recovered session thread: <#${thread.id}>`);
+}
+
+async function ensureActiveSessionThread(
+  playerId: string,
+  sessions: MariaDbPlayerSessionRepository,
+  message: Message,
+): Promise<{ threadChannelId: string } | null> {
+  const activeSession = await sessions.findActiveByPlayerId(playerId);
+  if (!activeSession) {
+    return null;
+  }
+
+  const threadChannel = await message.guild?.channels.fetch(activeSession.threadChannelId).catch(() => null);
+  if (!isUsablePrivateThread(threadChannel)) {
+    await sessions.archiveActiveByPlayerId(playerId);
+    return null;
+  }
+
+  if (threadChannel.archived || threadChannel.locked) {
+    await sessions.archiveActiveByPlayerId(playerId);
+    return null;
+  }
+
+  return activeSession;
+}
+
+function isUsablePrivateThread(channel: unknown): channel is ThreadChannel {
+  return Boolean(channel && typeof channel === 'object' && 'isThread' in channel && typeof channel.isThread === 'function' && channel.isThread());
 }
 
 export function parseStartCommand(content: string, fallbackHandle: string): { handle: string; nodeName: string; archetype: NodeArchetype } {
