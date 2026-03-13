@@ -39,6 +39,7 @@ const HELP_TEXT = [
   '.sh status',
   '.sh tasks',
   '.sh tasks claim',
+  '.sh next',
   '.sh scan',
   '.sh connect',
   '.sh claim',
@@ -92,7 +93,7 @@ export function createDiscordBotClient(): Client {
         return;
       }
 
-      const threadOnlyCommands = new Set(['.sh help', '.sh status', '.sh tasks', '.sh scan', '.sh connect', '.sh claim']);
+      const threadOnlyCommands = new Set(['.sh help', '.sh status', '.sh tasks', '.sh next', '.sh scan', '.sh connect', '.sh claim']);
       if (content.startsWith('.sh upgrade')) {
         threadOnlyCommands.add('.sh upgrade');
       }
@@ -227,6 +228,80 @@ export function createDiscordBotClient(): Client {
         }
 
         await message.reply(`Active objectives\n${lines.join('\n')}`);
+        return;
+      }
+
+
+      if (content === '.sh next') {
+        const activeScan = await scans.findLatestActiveByPlayerId(existingPlayer.id, new Date());
+
+        if (!activeScan) {
+          const scan = engine.scan(existingPlayer.id);
+          await scans.create(scan);
+          const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'SCAN', tasks, taskProgress, engine);
+          await message.reply(
+            `Next action: scan locked **${scan.discoveryType}** | Threat ${scan.threatLevel}/3
+Hint: ${scan.rewardHint}
+Expires: <t:${Math.floor(
+              scan.expiresAt.getTime() / 1000,
+            )}:R>${taskUpdateMessage ? `
+${taskUpdateMessage}` : ''}`,
+          );
+          return;
+        }
+
+        const connectedScan = engine.connect(activeScan);
+        const connectTaskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CONNECT', tasks, taskProgress, engine);
+
+        const node = await nodes.findByPlayerId(existingPlayer.id);
+        if (!node) {
+          await message.reply('Node not found. Contact an operator.');
+          return;
+        }
+
+        let claimedNode = engine.claim(node, connectedScan.discoveryType);
+        await scans.markResolved(connectedScan.id);
+
+        let factionContractLine = '';
+        if (connectedScan.discoveryType === 'FACTION_CONTRACT') {
+          const contractReward = engine.resolveFactionContract(connectedScan.threatLevel);
+          const standing = await factionReputation.addReputation(
+            existingPlayer.id,
+            contractReward.faction,
+            contractReward.reputationGain,
+          );
+
+          if (standing) {
+            factionContractLine = `
+Faction contract settled: **${factionLabel(standing.faction)}** +${contractReward.reputationGain} rep (total ${standing.reputation}, rank ${standing.rank}).`;
+          }
+        }
+
+        const claimTaskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', tasks, taskProgress, engine);
+
+        const collectible = engine.rollCollectible(existingPlayer.id);
+        let collectibleBonusLine = '';
+        if (collectible) {
+          await collectibles.create(collectible);
+          const withBonus = engine.applyCollectibleRarityEffect(claimedNode, collectible);
+          claimedNode = withBonus.node;
+          collectibleBonusLine = withBonus.bonusSummary;
+        }
+
+        await nodes.update(claimedNode);
+
+        await message.reply(
+          `Next action: handshake complete with **${connectedScan.discoveryType}**.` +
+            `
+Claim complete. Wallet => credits:${claimedNode.wallet.credits} data:${claimedNode.wallet.data} cycles:${claimedNode.wallet.cycles} parts:${claimedNode.wallet.parts}` +
+            factionContractLine +
+            (collectible ? `
+Collectible found: **${collectible.name}** (${collectible.rarity})${collectibleBonusLine ? ` | Rarity bonus ${collectibleBonusLine}` : ''}` : '') +
+            (connectTaskUpdateMessage ? `
+${connectTaskUpdateMessage}` : '') +
+            (claimTaskUpdateMessage ? `
+${claimTaskUpdateMessage}` : ''),
+        );
         return;
       }
 

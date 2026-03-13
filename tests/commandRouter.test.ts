@@ -19,6 +19,7 @@ describe('command router', () => {
     expect(isSupportedCommand('.sh resume')).toBe(true);
     expect(isSupportedCommand('.sh tasks')).toBe(true);
     expect(isSupportedCommand('.sh tasks claim')).toBe(true);
+    expect(isSupportedCommand('.sh next')).toBe(true);
     expect(isSupportedCommand('.sh scan')).toBe(true);
     expect(isSupportedCommand('.sh connect')).toBe(true);
     expect(isSupportedCommand('.sh claim')).toBe(true);
