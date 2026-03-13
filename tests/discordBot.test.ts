@@ -140,8 +140,8 @@ describe('formatFactionResponse', () => {
     ]);
 
     expect(message).toContain('Faction standings');
-    expect(message).toContain('**Helix Syndicate** | Rep 22 | Rank 2');
-    expect(message).toContain('**Null Sector** | Rep 10 | Rank 1');
+    expect(message).toContain('**Helix Syndicate** | Rep 22 | Rank 2 | Next rank in 78 rep');
+    expect(message).toContain('**Null Sector** | Rep 10 | Rank 1 | Next rank in 90 rep');
   });
 });
 
