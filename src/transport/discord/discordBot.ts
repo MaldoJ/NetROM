@@ -559,58 +559,61 @@ function factionLabel(faction: Faction): string {
   return 'Lattice Collective';
 }
 
+type FactionStanding = { faction: Faction; reputation: number; rank: number };
+
 function reputationToNextRank(reputation: number): number {
   const currentRankFloor = Math.floor(reputation / 100) * 100;
   return currentRankFloor + 100 - reputation;
 }
 
-export function formatFactionShopResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+function sortFactionStandings(standings: FactionStanding[]): FactionStanding[] {
+  return standings
+    .slice()
+    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction));
+}
+
+export function formatFactionShopResponse(standings: FactionStanding[]): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to unlock faction shop previews.';
   }
 
-  const lines = standings
-    .slice()
-    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
-    .map((entry) => {
-      const lockStatus = entry.rank >= 2 ? 'UNLOCKED' : 'LOCKED';
-      return `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Access ${lockStatus} (requires rank 2)`;
-    });
+  const lines = sortFactionStandings(standings).map((entry) => {
+    const lockStatus = entry.rank >= 2 ? 'UNLOCKED' : 'LOCKED';
+    return `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Access ${lockStatus} (requires rank 2)`;
+  });
 
-  return `Faction shop preview\n${lines.join('\n')}`;
+  return `Faction shop preview
+${lines.join('\n')}`;
 }
 
-
-
-export function formatFactionContractsResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+export function formatFactionContractsResponse(standings: FactionStanding[]): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to unlock contract tiers.';
   }
 
-  const lines = standings
-    .slice()
-    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
-    .map((entry) => {
-      const availableTier = entry.rank >= 3 ? 'Tier III' : entry.rank >= 2 ? 'Tier II' : 'Tier I';
-      const nextUnlock = entry.rank >= 3 ? 'MAX' : `Rank ${entry.rank + 1}`;
-      return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextUnlock}`;
-    });
+  const lines = sortFactionStandings(standings).map((entry) => {
+    const availableTier = entry.rank >= 3 ? 'Tier III' : entry.rank >= 2 ? 'Tier II' : 'Tier I';
+    const nextUnlock = entry.rank >= 3 ? 'MAX' : `Rank ${entry.rank + 1}`;
+    return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextUnlock}`;
+  });
 
-  return `Faction contract board\n${lines.join('\n')}`;
+  return `Faction contract board
+${lines.join('\n')}`;
 }
 
-export function formatFactionResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+export function formatFactionResponse(standings: FactionStanding[]): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to begin progression.';
   }
 
-  const lines = standings.map((entry) => {
+  const lines = sortFactionStandings(standings).map((entry) => {
     const repNeeded = reputationToNextRank(entry.reputation);
     return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
   });
-  return `Faction standings\n${lines.join('\n')}`;
-}
 
+  return `Faction standings
+${lines.join('\n')}`;
+}
 
 async function handleStart(
   message: Message,

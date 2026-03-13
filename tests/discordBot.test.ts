@@ -135,13 +135,24 @@ describe('formatFactionResponse', () => {
 
   it('renders faction standings sorted payload', () => {
     const message = formatFactionResponse([
-      { faction: 'HELIX_SYNDICATE', reputation: 22, rank: 2 },
       { faction: 'NULL_SECTOR', reputation: 10, rank: 1 },
+      { faction: 'HELIX_SYNDICATE', reputation: 22, rank: 2 },
     ]);
 
     expect(message).toContain('Faction standings');
     expect(message).toContain('**Helix Syndicate** | Rep 22 | Rank 2 | Next rank in 78 rep');
     expect(message).toContain('**Null Sector** | Rep 10 | Rank 1 | Next rank in 90 rep');
+    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
+  });
+
+
+  it('uses faction name tie-breaker when reputation is equal', () => {
+    const message = formatFactionResponse([
+      { faction: 'NULL_SECTOR', reputation: 50, rank: 1 },
+      { faction: 'HELIX_SYNDICATE', reputation: 50, rank: 1 },
+    ]);
+
+    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
 });
 
@@ -162,6 +173,16 @@ describe('formatFactionShopResponse', () => {
     expect(message).toContain('Faction shop preview');
     expect(message).toContain('**Helix Syndicate** | Rank 2 | Access UNLOCKED');
     expect(message).toContain('**Null Sector** | Rank 1 | Access LOCKED');
+  });
+
+
+  it('applies deterministic tie-break ordering for equal reputation', () => {
+    const message = formatFactionShopResponse([
+      { faction: 'NULL_SECTOR', reputation: 90, rank: 2 },
+      { faction: 'HELIX_SYNDICATE', reputation: 90, rank: 2 },
+    ]);
+
+    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
 });
 
@@ -184,5 +205,15 @@ describe('formatFactionContractsResponse', () => {
     expect(message).toContain('**Helix Syndicate** | Available Tier III contracts | Next unlock: MAX');
     expect(message).toContain('**Lattice Collective** | Available Tier II contracts | Next unlock: Rank 3');
     expect(message).toContain('**Null Sector** | Available Tier I contracts | Next unlock: Rank 2');
+  });
+
+
+  it('applies deterministic tie-break ordering for equal reputation', () => {
+    const message = formatFactionContractsResponse([
+      { faction: 'NULL_SECTOR', reputation: 120, rank: 2 },
+      { faction: 'HELIX_SYNDICATE', reputation: 120, rank: 2 },
+    ]);
+
+    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
 });
