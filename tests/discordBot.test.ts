@@ -37,10 +37,11 @@ describe('parseUpgradePath', () => {
 
 describe('formatProfileResponse', () => {
   it('includes collectible totals and rare counts', () => {
-    const message = formatProfileResponse('neo', 'DIAL_UP', 42, 'matrix', 'RELAY_NODE', 6, 2);
+    const message = formatProfileResponse('neo', 'DIAL_UP', 42, 'matrix', 'RELAY_NODE', 6, 2, 1, 3, 1);
 
     expect(message).toContain('Handle: **neo** | Era: **DIAL_UP** | Rep: **42**');
     expect(message).toContain('Node: **matrix** (RELAY_NODE)');
-    expect(message).toContain('Collectibles: **6** total | **2** rare+');
+    expect(message).toContain('Collectibles: **6** total | **2** rare+ | **1** epic');
+    expect(message).toContain('Sets: **1** complete | Categories unlocked: **3/3**');
   });
 });
