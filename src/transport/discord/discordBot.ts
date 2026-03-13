@@ -386,11 +386,15 @@ async function claimCompletedTaskRewards(
       continue;
     }
 
+    const claimed = await taskProgress.markRewardClaimed(playerId, task.id, claimTime);
+    if (!claimed) {
+      continue;
+    }
+
     const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
     nextNode = rewarded.node;
     nextPlayer = rewarded.player;
 
-    await taskProgress.markRewardClaimed(playerId, task.id, claimTime);
     claimLines.push(`Claimed [${task.scope}] ${taskLabel(task.key)} => ${engine.formatTaskReward(task)}`);
   }
 
