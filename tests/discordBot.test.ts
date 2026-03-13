@@ -62,17 +62,19 @@ describe('formatProfileResponse', () => {
 
 describe('formatCollectionResponse', () => {
   it('shows an empty-state message when no collectibles exist', () => {
-    const message = formatCollectionResponse(0, 0, 0, 0, 0, []);
+    const message = formatCollectionResponse(0, 0, 0, 0, 0, 0, []);
 
     expect(message).toContain('Collection vault');
     expect(message).toContain('Total collectibles: **0**');
     expect(message).toContain('Complete sets forged: **0**');
     expect(message).toContain('Category totals: ANSI **0** | ARCHIVE **0** | MALWARE **0**');
+    expect(message).toContain('Set forge progress: **0/3** fragments toward set #1 | Missing pieces: **3**');
+    expect(message).toContain('Category unlocks: **0/3**');
     expect(message).toContain('Recent drops: none yet.');
   });
 
   it('lists recent collectibles with rarity and category', () => {
-    const message = formatCollectionResponse(7, 2, 3, 2, 2, [
+    const message = formatCollectionResponse(7, 2, 3, 2, 2, 3, [
       { name: 'Relic_SIGIL_RARE', rarity: 'RARE', category: 'ANSI_RELIC' },
       { name: 'Log_PULSE_EPIC', rarity: 'EPIC', category: 'ARCHIVED_LOG' },
     ]);
@@ -80,6 +82,8 @@ describe('formatCollectionResponse', () => {
     expect(message).toContain('Total collectibles: **7**');
     expect(message).toContain('Complete sets forged: **2**');
     expect(message).toContain('Category totals: ANSI **3** | ARCHIVE **2** | MALWARE **2**');
+    expect(message).toContain('Set forge progress: **1/3** fragments toward set #3 | Missing pieces: **2**');
+    expect(message).toContain('Category unlocks: **3/3**');
     expect(message).toContain('**Relic_SIGIL_RARE** [RARE] (ANSI_RELIC)');
     expect(message).toContain('**Log_PULSE_EPIC** [EPIC] (ARCHIVED_LOG)');
   });

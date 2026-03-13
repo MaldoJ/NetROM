@@ -109,6 +109,7 @@ export function createDiscordBotClient(): Client {
             collectibleSummary.ansiTotal,
             collectibleSummary.archiveTotal,
             collectibleSummary.malwareTotal,
+            collectibleSummary.categoriesUnlocked,
             recentCollectibles,
           ),
         );
@@ -524,8 +525,18 @@ export function formatCollectionResponse(
   ansiTotal: number,
   archiveTotal: number,
   malwareTotal: number,
+  categoriesUnlocked: number,
   recentCollectibles: { name: string; rarity: string; category: string }[],
 ): string {
+  const nextSetTarget = completedSets + 1;
+  const missingForNextSet = [
+    Math.max(0, nextSetTarget - ansiTotal),
+    Math.max(0, nextSetTarget - archiveTotal),
+    Math.max(0, nextSetTarget - malwareTotal),
+  ];
+  const fragments = missingForNextSet.filter((missing) => missing === 0).length;
+  const missingPieces = missingForNextSet.reduce((sum, missing) => sum + missing, 0);
+
   const recentLine =
     recentCollectibles.length === 0
       ? 'Recent drops: none yet. Run `.sh claim` to start collecting.'
@@ -537,6 +548,8 @@ export function formatCollectionResponse(
 Total collectibles: **${totalCollectibles}**
 Complete sets forged: **${completedSets}**
 Category totals: ANSI **${ansiTotal}** | ARCHIVE **${archiveTotal}** | MALWARE **${malwareTotal}**
+Set forge progress: **${fragments}/3** fragments toward set #${nextSetTarget} | Missing pieces: **${missingPieces}**
+Category unlocks: **${categoriesUnlocked}/3**
 ${recentLine}`;
 }
 
