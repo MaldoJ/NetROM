@@ -1,4 +1,4 @@
-import type { DiscoveryType, NodeArchetype, TaskScope } from '../domain/types.js';
+import type { DiscoveryType, Faction, NodeArchetype, TaskScope } from '../domain/types.js';
 import type {
   Collectible,
   Player,
@@ -25,6 +25,8 @@ const ACTIVE_TASK_TARGETS: Record<TaskScope, number> = {
   DAILY: 2,
   WEEKLY: 1,
 };
+
+const FACTION_ORDER: Faction[] = ['HELIX_SYNDICATE', 'NULL_SECTOR', 'LATTICE_COLLECTIVE'];
 
 export class GameEngine {
   constructor(private readonly random: RandomSource = new MathRandomSource()) {}
@@ -100,6 +102,16 @@ export class GameEngine {
         break;
     }
     return next;
+  }
+
+  resolveFactionContract(threatLevel: number): { faction: Faction; reputationGain: number } {
+    const normalizedThreat = Math.max(1, Math.min(threatLevel, 3));
+    const faction = FACTION_ORDER[Math.floor(this.random.next() * FACTION_ORDER.length)] ?? 'HELIX_SYNDICATE';
+
+    return {
+      faction,
+      reputationGain: 8 + normalizedThreat * 4,
+    };
   }
 
   createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {
