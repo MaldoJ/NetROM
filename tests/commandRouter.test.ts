@@ -8,8 +8,11 @@ describe('command router', () => {
 
   it('supports mvp shell commands', () => {
     expect(isSupportedCommand('.sh status')).toBe(true);
+    expect(isSupportedCommand('.sh profile')).toBe(true);
+    expect(isSupportedCommand('.sh collection')).toBe(true);
     expect(isSupportedCommand('.sh leaderboard')).toBe(true);
     expect(isSupportedCommand('.sh resume')).toBe(true);
+    expect(isSupportedCommand('.sh tasks')).toBe(true);
     expect(isSupportedCommand('.sh upgrade')).toBe(true);
     expect(isSupportedCommand('.sh upgrade modem')).toBe(true);
     expect(isSupportedCommand('.sh   upgrade   storage')).toBe(true);
