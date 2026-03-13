@@ -102,7 +102,16 @@ export function createDiscordBotClient(): Client {
         const collectibleSummary = await collectibles.getSummaryByPlayerId(existingPlayer.id);
         const recentCollectibles = await collectibles.listRecentByPlayerId(existingPlayer.id, 5);
 
-        await message.reply(formatCollectionResponse(collectibleSummary.total, collectibleSummary.completedSets, recentCollectibles));
+        await message.reply(
+          formatCollectionResponse(
+            collectibleSummary.total,
+            collectibleSummary.completedSets,
+            collectibleSummary.ansiTotal,
+            collectibleSummary.archiveTotal,
+            collectibleSummary.malwareTotal,
+            recentCollectibles,
+          ),
+        );
         return;
       }
 
@@ -504,7 +513,14 @@ export function formatProfileResponse(
 }
 
 
-export function formatCollectionResponse(totalCollectibles: number, completedSets: number, recentCollectibles: { name: string; rarity: string; category: string }[]): string {
+export function formatCollectionResponse(
+  totalCollectibles: number,
+  completedSets: number,
+  ansiTotal: number,
+  archiveTotal: number,
+  malwareTotal: number,
+  recentCollectibles: { name: string; rarity: string; category: string }[],
+): string {
   const recentLine =
     recentCollectibles.length === 0
       ? 'Recent drops: none yet. Run `.sh claim` to start collecting.'
@@ -515,6 +531,7 @@ export function formatCollectionResponse(totalCollectibles: number, completedSet
   return `Collection vault
 Total collectibles: **${totalCollectibles}**
 Complete sets forged: **${completedSets}**
+Category totals: ANSI **${ansiTotal}** | ARCHIVE **${archiveTotal}** | MALWARE **${malwareTotal}**
 ${recentLine}`;
 }
 

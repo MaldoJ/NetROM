@@ -14,6 +14,9 @@ export type CollectibleSummary = {
   total: number;
   rareOrBetter: number;
   epicTotal: number;
+  ansiTotal: number;
+  archiveTotal: number;
+  malwareTotal: number;
   categoriesUnlocked: number;
   completedSets: number;
 };
@@ -70,6 +73,9 @@ export class MariaDbCollectibleRepository {
       total: Number(row?.total ?? 0),
       rareOrBetter: Number(row?.rare_or_better ?? 0),
       epicTotal: Number(row?.epic_total ?? 0),
+      ansiTotal,
+      archiveTotal,
+      malwareTotal,
       categoriesUnlocked,
       completedSets,
     };
