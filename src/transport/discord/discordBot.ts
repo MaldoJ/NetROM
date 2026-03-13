@@ -107,7 +107,8 @@ export function createDiscordBotClient(): Client {
           return;
         }
 
-        await message.reply(`Handshake complete with **${scan.discoveryType}**. Run \.sh claim to capture rewards.`);
+        const activeScan = engine.connect(scan);
+        await message.reply(`Handshake complete with **${activeScan.discoveryType}**. Run \.sh claim to capture rewards.`);
         return;
       }
 

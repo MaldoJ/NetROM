@@ -1,9 +1,12 @@
 import type { DiscoveryType, NodeArchetype } from '../domain/types.js';
 import type { Player, PlayerNode, ScanResult } from '../domain/entities.js';
+import { MathRandomSource, type RandomSource } from './random.js';
 
 const BASE_RESOURCES = { credits: 100, data: 25, cycles: 5, parts: 10 };
 
 export class GameEngine {
+  constructor(private readonly random: RandomSource = new MathRandomSource()) {}
+
   onboard(discordUserId: string, handle: string, nodeName: string, archetype: NodeArchetype): { player: Player; node: PlayerNode } {
     const playerId = `plr_${discordUserId}`;
     const now = new Date();
@@ -35,16 +38,23 @@ export class GameEngine {
 
   scan(playerId: string): ScanResult {
     const discoveries: DiscoveryType[] = ['ABANDONED_RELAY', 'VULNERABLE_NODE', 'ARCHIVE_CACHE', 'FACTION_CONTRACT'];
-    const discoveryType = discoveries[Math.floor(Math.random() * discoveries.length)];
+    const discoveryType = discoveries[Math.floor(this.random.next() * discoveries.length)];
 
     return {
       id: `scan_${Date.now()}`,
       playerId,
       discoveryType,
-      threatLevel: Math.ceil(Math.random() * 3),
+      threatLevel: Math.ceil(this.random.next() * 3),
       rewardHint: this.rewardHint(discoveryType),
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     };
+  }
+
+  connect(scan: ScanResult, now: Date = new Date()): ScanResult {
+    if (scan.expiresAt.getTime() <= now.getTime()) {
+      throw new Error('Target lock expired. Run `.sh scan` again.');
+    }
+    return scan;
   }
 
   claim(node: PlayerNode, discoveryType: DiscoveryType): PlayerNode {
