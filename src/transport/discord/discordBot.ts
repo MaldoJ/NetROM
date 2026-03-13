@@ -435,9 +435,14 @@ async function handleResume(
   const activeSession = await sessions.findActiveByPlayerId(existingPlayer.id);
 
   if (activeSession) {
-    const existingThread = await channel.threads.fetch(activeSession.threadChannelId).catch(() => null);
-    if (existingThread) {
-      await message.reply(`Session already active in <#${activeSession.threadChannelId}>.`);
+    const existingThread = await message.guild?.channels.fetch(activeSession.threadChannelId).catch(() => null);
+    if (existingThread?.isThread()) {
+      if (existingThread.archived) {
+        await existingThread.setArchived(false, 'NETROM session recovery');
+      }
+
+      await existingThread.members.add(message.author.id).catch(() => null);
+      await message.reply(`Session restored in <#${activeSession.threadChannelId}>.`);
       return;
     }
 
