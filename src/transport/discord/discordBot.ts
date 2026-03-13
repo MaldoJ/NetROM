@@ -34,6 +34,7 @@ const HELP_TEXT = [
   '.sh leaderboard',
   '.sh factions',
   '.sh factions shop',
+  '.sh factions contracts',
   '.sh resume',
   '.sh status',
   '.sh tasks',
@@ -168,6 +169,13 @@ export function createDiscordBotClient(): Client {
         await factionReputation.ensurePlayerRows(existingPlayer.id);
         const standings = await factionReputation.listByPlayerId(existingPlayer.id);
         await message.reply(formatFactionShopResponse(standings));
+        return;
+      }
+
+      if (content === '.sh factions contracts') {
+        await factionReputation.ensurePlayerRows(existingPlayer.id);
+        const standings = await factionReputation.listByPlayerId(existingPlayer.id);
+        await message.reply(formatFactionContractsResponse(standings));
         return;
       }
 
@@ -497,6 +505,24 @@ export function formatFactionShopResponse(standings: Array<{ faction: Faction; r
   return `Faction shop preview\n${lines.join('\n')}`;
 }
 
+
+
+export function formatFactionContractsResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+  if (standings.length === 0) {
+    return 'No faction standing found yet. Complete contracts to unlock contract tiers.';
+  }
+
+  const lines = standings
+    .slice()
+    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
+    .map((entry) => {
+      const availableTier = entry.rank >= 3 ? 'Tier III' : entry.rank >= 2 ? 'Tier II' : 'Tier I';
+      const nextUnlock = entry.rank >= 3 ? 'MAX' : `Rank ${entry.rank + 1}`;
+      return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextUnlock}`;
+    });
+
+  return `Faction contract board\n${lines.join('\n')}`;
+}
 
 export function formatFactionResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
   if (standings.length === 0) {
