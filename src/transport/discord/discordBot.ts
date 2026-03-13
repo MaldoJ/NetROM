@@ -261,6 +261,7 @@ async function applyTaskActionProgress(
   const node = await nodes.findByPlayerId(playerId);
   if (!player || !node) return null;
 
+  const progressUpdates: string[] = [];
   const completions: TaskDefinition[] = [];
 
   for (const task of activeTasks) {
@@ -287,28 +288,34 @@ async function applyTaskActionProgress(
     }
 
     await taskProgress.setProgress(playerId, task.id, nextProgress.progressValue, nextProgress.completedAt);
+    progressUpdates.push(engine.formatTaskProgress(task, nextProgress.progressValue));
 
     if (!stored.completed_at && nextProgress.completedAt) {
       completions.push(task);
     }
   }
 
-  if (completions.length === 0) return null;
+  if (progressUpdates.length === 0) return null;
 
-  let nextPlayer: Player = player;
-  let nextNode: PlayerNode = node;
+  const lines: string[] = [`Task progress: ${progressUpdates.join(' | ')}`];
 
-  for (const task of completions) {
-    const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
-    nextNode = rewarded.node;
-    nextPlayer = rewarded.player;
+  if (completions.length > 0) {
+    let nextPlayer: Player = player;
+    let nextNode: PlayerNode = node;
+
+    for (const task of completions) {
+      const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
+      nextNode = rewarded.node;
+      nextPlayer = rewarded.player;
+    }
+
+    await nodes.update(nextNode);
+    await players.updateReputation(nextPlayer.id, nextPlayer.reputation);
+
+    lines.push(...completions.map((task) => `Task complete: **${task.key}** (${engine.formatTaskReward(task)})`));
   }
 
-  await nodes.update(nextNode);
-  await players.updateReputation(nextPlayer.id, nextPlayer.reputation);
-
-  const completedKeys = completions.map((task) => task.key).join(', ');
-  return `Task complete: **${completedKeys}**`;
+  return lines.join('\n');
 }
 
 async function handleStart(
