@@ -2,9 +2,9 @@
 
 NETROM is a Discord-native multiplayer terminal game where players evolve from dial-up era sysops into modern network operators.
 
-## Phase 1 deliverable (completed here)
+## Phase 2 deliverable (current increment)
 
-This repository now includes the full Phase 1 MVP foundation:
+This repository now includes the Phase 1 MVP foundation plus the first Phase 2 progression hook:
 
 - TypeScript + Node 24+ project scaffold
 - Domain-first game engine skeleton
@@ -14,6 +14,7 @@ This repository now includes the full Phase 1 MVP foundation:
 - Task progression + reward claiming loop (`.sh tasks`, `.sh tasks claim`)
 - Collectible progression surfaces (`.sh collection`, profile collectible stats)
 - Session recovery workflow (`.sh resume`)
+- Faction standing command + persistence seed (`.sh factions`)
 - Design docs for architecture, command UX, and phased roadmap
 
 See `docs/netrom-foundation.md` for complete design + implementation details.

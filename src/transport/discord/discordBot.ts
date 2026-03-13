@@ -15,7 +15,7 @@ import {
 } from '../../application/collectibleProgression.js';
 import { formatTaskProgressLabel, taskLabel } from '../../application/taskPresentation.js';
 import type { Player, PlayerNode, TaskDefinition } from '../../domain/entities.js';
-import type { NodeArchetype } from '../../domain/types.js';
+import type { Faction, NodeArchetype } from '../../domain/types.js';
 import { createDbPool } from '../../infrastructure/db/mariadb.js';
 import { MariaDbPlayerRepository } from '../../infrastructure/repositories/mariadbPlayerRepository.js';
 import { MariaDbPlayerNodeRepository } from '../../infrastructure/repositories/mariadbPlayerNodeRepository.js';
@@ -24,6 +24,7 @@ import { MariaDbCollectibleRepository } from '../../infrastructure/repositories/
 import { MariaDbPlayerSessionRepository } from '../../infrastructure/repositories/mariadbPlayerSessionRepository.js';
 import { MariaDbTaskRepository } from '../../infrastructure/repositories/mariadbTaskRepository.js';
 import { MariaDbPlayerTaskProgressRepository } from '../../infrastructure/repositories/mariadbPlayerTaskProgressRepository.js';
+import { MariaDbFactionReputationRepository } from '../../infrastructure/repositories/mariadbFactionReputationRepository.js';
 
 const HELP_TEXT = [
   '```',
@@ -31,6 +32,7 @@ const HELP_TEXT = [
   '.sh profile',
   '.sh collection',
   '.sh leaderboard',
+  '.sh factions',
   '.sh resume',
   '.sh status',
   '.sh tasks',
@@ -64,6 +66,7 @@ export function createDiscordBotClient(): Client {
     const sessions = new MariaDbPlayerSessionRepository(connection);
     const tasks = new MariaDbTaskRepository(connection);
     const taskProgress = new MariaDbPlayerTaskProgressRepository(connection);
+    const factionReputation = new MariaDbFactionReputationRepository(connection);
 
     try {
       if (content === '.sh help') {
@@ -149,6 +152,14 @@ export function createDiscordBotClient(): Client {
             collectibleSummary.completedSets,
           ),
         );
+        return;
+      }
+
+
+      if (content === '.sh factions') {
+        await factionReputation.ensurePlayerRows(existingPlayer.id);
+        const standings = await factionReputation.listByPlayerId(existingPlayer.id);
+        await message.reply(formatFactionResponse(standings));
         return;
       }
 
@@ -431,6 +442,23 @@ async function ensureActiveTasks(tasks: MariaDbTaskRepository, engine: GameEngin
       await tasks.create(task);
     }
   }
+}
+
+
+
+function factionLabel(faction: Faction): string {
+  if (faction === 'HELIX_SYNDICATE') return 'Helix Syndicate';
+  if (faction === 'NULL_SECTOR') return 'Null Sector';
+  return 'Lattice Collective';
+}
+
+export function formatFactionResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+  if (standings.length === 0) {
+    return 'No faction standing found yet. Complete contracts to begin progression.';
+  }
+
+  const lines = standings.map((entry) => `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank}`);
+  return `Faction standings\n${lines.join('\n')}`;
 }
 
 

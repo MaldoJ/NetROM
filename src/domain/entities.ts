@@ -1,4 +1,4 @@
-import type { DiscoveryType, Era, NodeArchetype, ResourceWallet, TaskKey, TaskScope } from './types.js';
+import type { DiscoveryType, Era, Faction, NodeArchetype, ResourceWallet, TaskKey, TaskScope } from './types.js';
 
 export interface Player {
   id: string;
@@ -59,4 +59,13 @@ export interface PlayerTaskProgress {
   taskId: string;
   progressValue: number;
   completedAt: Date | null;
+}
+
+
+export interface PlayerFactionReputation {
+  playerId: string;
+  faction: Faction;
+  reputation: number;
+  rank: number;
+  updatedAt: Date;
 }

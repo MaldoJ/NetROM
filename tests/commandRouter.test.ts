@@ -11,6 +11,7 @@ describe('command router', () => {
     expect(isSupportedCommand('.sh profile')).toBe(true);
     expect(isSupportedCommand('.sh collection')).toBe(true);
     expect(isSupportedCommand('.sh leaderboard')).toBe(true);
+    expect(isSupportedCommand('.sh factions')).toBe(true);
     expect(isSupportedCommand('.sh resume')).toBe(true);
     expect(isSupportedCommand('.sh tasks')).toBe(true);
     expect(isSupportedCommand('.sh tasks claim')).toBe(true);

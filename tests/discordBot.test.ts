@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCollectionResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatCollectionResponse, formatFactionResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
 import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
@@ -122,5 +122,25 @@ describe('formatTaskSnapshot', () => {
 
     expect(line).toContain('🟣 [DAILY] Run scans 3/3 (100%) (0 left, ');
     expect(line).toContain('payout claimed');
+  });
+});
+
+
+describe('formatFactionResponse', () => {
+  it('shows empty state when no factions are initialized', () => {
+    const message = formatFactionResponse([]);
+
+    expect(message).toContain('No faction standing found yet');
+  });
+
+  it('renders faction standings sorted payload', () => {
+    const message = formatFactionResponse([
+      { faction: 'HELIX_SYNDICATE', reputation: 22, rank: 2 },
+      { faction: 'NULL_SECTOR', reputation: 10, rank: 1 },
+    ]);
+
+    expect(message).toContain('Faction standings');
+    expect(message).toContain('**Helix Syndicate** | Rep 22 | Rank 2');
+    expect(message).toContain('**Null Sector** | Rep 10 | Rank 1');
   });
 });
