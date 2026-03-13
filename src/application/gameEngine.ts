@@ -99,17 +99,26 @@ export class GameEngine {
   createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {
     const pool = scope === 'DAILY' ? DAILY_TASKS : WEEKLY_TASKS;
     const template = pool[Math.floor(this.random.next() * pool.length)];
+
     const activeFrom = new Date(now);
-    const activeTo = new Date(now);
+    activeFrom.setUTCHours(0, 0, 0, 0);
+
+    const activeTo = new Date(activeFrom);
     activeTo.setUTCHours(23, 59, 59, 999);
 
     if (scope === 'WEEKLY') {
-      activeTo.setUTCDate(activeTo.getUTCDate() + 6);
+      const dayOffset = (activeFrom.getUTCDay() + 6) % 7;
+      activeFrom.setUTCDate(activeFrom.getUTCDate() - dayOffset);
+      activeTo.setTime(activeFrom.getTime());
+      activeTo.setUTCDate(activeFrom.getUTCDate() + 6);
+      activeTo.setUTCHours(23, 59, 59, 999);
     }
+
+    const windowToken = activeFrom.toISOString().slice(0, 10);
 
     return {
       ...template,
-      id: `${scope.toLowerCase()}_${now.getTime()}`,
+      id: `${scope.toLowerCase()}_${windowToken}`,
       activeFrom,
       activeTo,
     };
