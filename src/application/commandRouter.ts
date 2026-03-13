@@ -3,12 +3,17 @@ export type ShellCommand =
   | '.sh help'
   | '.sh status'
   | '.sh profile'
+  | '.sh collection'
   | '.sh leaderboard'
   | '.sh resume'
+  | '.sh tasks'
   | '.sh scan'
   | '.sh connect'
   | '.sh claim'
-  | '.sh upgrade';
+  | '.sh upgrade'
+  | `.sh upgrade ${UpgradePath}`;
+
+type UpgradePath = 'modem' | 'storage' | 'cpu';
 
 const UPGRADE_COMMAND_PATTERN = /^\.sh upgrade(?: (modem|storage|cpu))?$/;
 
@@ -27,8 +32,10 @@ export function isSupportedCommand(content: string): content is ShellCommand {
     '.sh help',
     '.sh status',
     '.sh profile',
+    '.sh collection',
     '.sh leaderboard',
     '.sh resume',
+    '.sh tasks',
     '.sh scan',
     '.sh connect',
     '.sh claim',
