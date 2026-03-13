@@ -56,7 +56,7 @@ describe('GameEngine', () => {
     expect(task.scope).toBe('DAILY');
     expect(task.key).toBe('RUN_SCANS');
     expect(task.objectiveValue).toBe(3);
-    expect(task.id).toBe('daily_2026-03-10');
+    expect(task.id).toBe('daily_2026-03-10_run_scans');
     expect(task.activeFrom.toISOString()).toBe('2026-03-10T00:00:00.000Z');
     expect(task.activeTo.toISOString()).toBe('2026-03-10T23:59:59.999Z');
   });
@@ -67,7 +67,7 @@ describe('GameEngine', () => {
 
     const task = engine.createActiveTask('WEEKLY', now);
 
-    expect(task.id).toBe('weekly_2026-03-09');
+    expect(task.id).toBe('weekly_2026-03-09_run_scans');
     expect(task.activeFrom.toISOString()).toBe('2026-03-09T00:00:00.000Z');
     expect(task.activeTo.toISOString()).toBe('2026-03-15T23:59:59.999Z');
   });
@@ -85,6 +85,18 @@ describe('GameEngine', () => {
 
     const match = engine.advanceProgressForAction(base, task, 'CONNECT', now);
     expect(match.progressValue).toBe(1);
+  });
+
+  it('creates a unique active daily objective set', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.0, 0.0]));
+
+    const tasks = engine.createActiveTaskSet('DAILY', now);
+
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]?.key).toBe('RUN_SCANS');
+    expect(tasks[1]?.key).toBe('CONNECT_TARGETS');
+    expect(new Set(tasks.map((task) => task.id)).size).toBe(2);
   });
 
 

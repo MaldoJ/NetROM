@@ -367,14 +367,21 @@ async function applyTaskActionProgress(
 }
 
 async function ensureActiveTasks(tasks: MariaDbTaskRepository, engine: GameEngine, now: Date = new Date()): Promise<void> {
-  const daily = await tasks.findLatestActiveByScope('DAILY', now);
-  if (!daily) {
-    await tasks.create(engine.createActiveTask('DAILY', now));
-  }
+  for (const scope of ['DAILY', 'WEEKLY'] as const) {
+    const activeForScope = await tasks.findActiveByScope(scope, now);
+    const targetCount = engine.activeTaskTarget(scope);
 
-  const weekly = await tasks.findLatestActiveByScope('WEEKLY', now);
-  if (!weekly) {
-    await tasks.create(engine.createActiveTask('WEEKLY', now));
+    if (activeForScope.length >= targetCount) {
+      continue;
+    }
+
+    const activeKeys = new Set(activeForScope.map((task) => task.key));
+    const generated = engine.createActiveTaskSet(scope, now).filter((task) => !activeKeys.has(task.key));
+    const missing = targetCount - activeForScope.length;
+
+    for (const task of generated.slice(0, missing)) {
+      await tasks.create(task);
+    }
   }
 }
 

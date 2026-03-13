@@ -21,6 +21,11 @@ const WEEKLY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
   { scope: 'WEEKLY', key: 'UPGRADE_NODE', objectiveValue: 2, reward: { credits: 120, parts: 10, reputation: 95 } },
 ];
 
+const ACTIVE_TASK_TARGETS: Record<TaskScope, number> = {
+  DAILY: 2,
+  WEEKLY: 1,
+};
+
 export class GameEngine {
   constructor(private readonly random: RandomSource = new MathRandomSource()) {}
 
@@ -98,8 +103,48 @@ export class GameEngine {
   }
 
   createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {
-    const pool = scope === 'DAILY' ? DAILY_TASKS : WEEKLY_TASKS;
+    const pool = this.taskPool(scope);
     const template = pool[Math.floor(this.random.next() * pool.length)];
+    const { activeFrom, activeTo } = this.getTaskWindow(scope, now);
+    const windowToken = activeFrom.toISOString().slice(0, 10);
+
+    return {
+      ...template,
+      id: `${scope.toLowerCase()}_${windowToken}_${template.key.toLowerCase()}`,
+      activeFrom,
+      activeTo,
+    };
+  }
+
+  createActiveTaskSet(scope: TaskScope, now: Date = new Date()): TaskDefinition[] {
+    const pool = [...this.taskPool(scope)];
+    const targetCount = Math.min(ACTIVE_TASK_TARGETS[scope], pool.length);
+    const selected: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [];
+
+    while (selected.length < targetCount) {
+      const choiceIndex = Math.floor(this.random.next() * pool.length);
+      const [picked] = pool.splice(choiceIndex, 1);
+      if (picked) {
+        selected.push(picked);
+      }
+    }
+
+    const { activeFrom, activeTo } = this.getTaskWindow(scope, now);
+    const windowToken = activeFrom.toISOString().slice(0, 10);
+
+    return selected.map((template) => ({
+      ...template,
+      id: `${scope.toLowerCase()}_${windowToken}_${template.key.toLowerCase()}`,
+      activeFrom,
+      activeTo,
+    }));
+  }
+
+  activeTaskTarget(scope: TaskScope): number {
+    return ACTIVE_TASK_TARGETS[scope];
+  }
+
+  private getTaskWindow(scope: TaskScope, now: Date): { activeFrom: Date; activeTo: Date } {
 
     const activeFrom = new Date(now);
     activeFrom.setUTCHours(0, 0, 0, 0);
@@ -115,14 +160,11 @@ export class GameEngine {
       activeTo.setUTCHours(23, 59, 59, 999);
     }
 
-    const windowToken = activeFrom.toISOString().slice(0, 10);
+    return { activeFrom, activeTo };
+  }
 
-    return {
-      ...template,
-      id: `${scope.toLowerCase()}_${windowToken}`,
-      activeFrom,
-      activeTo,
-    };
+  private taskPool(scope: TaskScope): Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] {
+    return scope === 'DAILY' ? DAILY_TASKS : WEEKLY_TASKS;
   }
 
   initializeTaskProgress(playerId: string, task: TaskDefinition): PlayerTaskProgress {
