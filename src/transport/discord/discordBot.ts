@@ -456,7 +456,7 @@ async function handleResume(
 }
 
 export function parseStartCommand(content: string, fallbackHandle: string): { handle: string; nodeName: string; archetype: NodeArchetype } {
-  const [_, __, handle, nodeName, archetype] = content.split(' ');
+  const [_, __, handle, nodeName, archetype] = content.trim().split(/\s+/);
   const normalizedArchetype = (archetype ?? 'relay').toUpperCase();
 
   return {
@@ -475,7 +475,7 @@ function coerceArchetype(value: string): NodeArchetype {
 }
 
 export function parseUpgradePath(content: string): 'MODEM' | 'STORAGE' | 'CPU' | null {
-  const path = content.split(' ')[2];
+  const path = content.trim().split(/\s+/)[2]?.toLowerCase();
   if (!path) return null;
   if (path === 'modem') return 'MODEM';
   if (path === 'storage') return 'STORAGE';
