@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatCollectionResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
 import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
@@ -44,6 +44,30 @@ describe('formatProfileResponse', () => {
     expect(message).toContain('Node: **matrix** (RELAY_NODE)');
     expect(message).toContain('Collectibles: **6** total | **2** rare+ | **1** epic');
     expect(message).toContain('Sets: **1** complete | Categories unlocked: **3/3**');
+  });
+});
+
+
+describe('formatCollectionResponse', () => {
+  it('shows an empty-state message when no collectibles exist', () => {
+    const message = formatCollectionResponse(0, 0, []);
+
+    expect(message).toContain('Collection vault');
+    expect(message).toContain('Total collectibles: **0**');
+    expect(message).toContain('Complete sets forged: **0**');
+    expect(message).toContain('Recent drops: none yet.');
+  });
+
+  it('lists recent collectibles with rarity and category', () => {
+    const message = formatCollectionResponse(7, 2, [
+      { name: 'Relic_SIGIL_RARE', rarity: 'RARE', category: 'ANSI_RELIC' },
+      { name: 'Log_PULSE_EPIC', rarity: 'EPIC', category: 'ARCHIVED_LOG' },
+    ]);
+
+    expect(message).toContain('Total collectibles: **7**');
+    expect(message).toContain('Complete sets forged: **2**');
+    expect(message).toContain('**Relic_SIGIL_RARE** [RARE] (ANSI_RELIC)');
+    expect(message).toContain('**Log_PULSE_EPIC** [EPIC] (ARCHIVED_LOG)');
   });
 });
 
