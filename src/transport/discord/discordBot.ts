@@ -95,9 +95,18 @@ export function createDiscordBotClient(): Client {
           return;
         }
 
+        const collectibleSummary = await collectibles.getSummaryByPlayerId(existingPlayer.id);
+
         await message.reply(
-          `Handle: **${existingPlayer.handle}** | Era: **${existingPlayer.currentEra}** | Rep: **${existingPlayer.reputation}**\n` +
-            `Node: **${node.name}** (${node.archetype})`,
+          formatProfileResponse(
+            existingPlayer.handle,
+            existingPlayer.currentEra,
+            existingPlayer.reputation,
+            node.name,
+            node.archetype,
+            collectibleSummary.total,
+            collectibleSummary.rareOrBetter,
+          ),
         );
         return;
       }
@@ -291,4 +300,20 @@ export function parseUpgradePath(content: string): 'MODEM' | 'STORAGE' | 'CPU' |
   if (path === 'storage') return 'STORAGE';
   if (path === 'cpu') return 'CPU';
   return null;
+}
+
+export function formatProfileResponse(
+  handle: string,
+  era: string,
+  reputation: number,
+  nodeName: string,
+  nodeArchetype: string,
+  totalCollectibles: number,
+  rareCollectibles: number,
+): string {
+  return (
+    `Handle: **${handle}** | Era: **${era}** | Rep: **${reputation}**\n` +
+    `Node: **${nodeName}** (${nodeArchetype})\n` +
+    `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+`
+  );
 }
