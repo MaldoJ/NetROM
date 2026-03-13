@@ -243,21 +243,26 @@ ${taskUpdateMessage}` : ''}`,
           return;
         }
 
-        const upgraded = engine.claim(node, scan.discoveryType);
-        await nodes.update(upgraded);
+        let claimedNode = engine.claim(node, scan.discoveryType);
         await scans.markResolved(scan.id);
 
         const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', tasks, taskProgress, engine);
 
         const collectible = engine.rollCollectible(existingPlayer.id);
+        let collectibleBonusLine = '';
         if (collectible) {
           await collectibles.create(collectible);
+          const withBonus = engine.applyCollectibleRarityEffect(claimedNode, collectible);
+          claimedNode = withBonus.node;
+          collectibleBonusLine = withBonus.bonusSummary;
         }
 
+        await nodes.update(claimedNode);
+
         await message.reply(
-          `Claim complete for **${scan.discoveryType}**. Wallet => credits:${upgraded.wallet.credits} data:${upgraded.wallet.data} cycles:${upgraded.wallet.cycles} parts:${upgraded.wallet.parts}` +
+          `Claim complete for **${scan.discoveryType}**. Wallet => credits:${claimedNode.wallet.credits} data:${claimedNode.wallet.data} cycles:${claimedNode.wallet.cycles} parts:${claimedNode.wallet.parts}` +
             (collectible ? `
-Collectible found: **${collectible.name}** (${collectible.rarity})` : '') +
+Collectible found: **${collectible.name}** (${collectible.rarity})${collectibleBonusLine ? ` | Rarity bonus ${collectibleBonusLine}` : ''}` : '') +
             (taskUpdateMessage ? `
 ${taskUpdateMessage}` : ''),
         );

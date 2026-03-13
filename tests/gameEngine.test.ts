@@ -47,6 +47,47 @@ describe('GameEngine', () => {
     expect(engine.rollCollectible('plr_1')).toBeNull();
   });
 
+  it('applies rarity effects from collectible drops', () => {
+    const engine = new GameEngine();
+    const { node } = engine.onboard('123', 'sysop', 'alpha-node', 'RELAY_NODE');
+
+    const uncommon = engine.applyCollectibleRarityEffect(node, {
+      id: 'col_1',
+      playerId: 'plr_1',
+      category: 'ANSI_RELIC',
+      rarity: 'UNCOMMON',
+      name: 'uncommon ansi relic',
+      acquiredAt: new Date('2026-03-10T00:00:00.000Z'),
+    });
+    expect(uncommon.node.wallet.data).toBe(node.wallet.data + 10);
+    expect(uncommon.bonusSummary).toBe('+10 data');
+
+    const rare = engine.applyCollectibleRarityEffect(node, {
+      id: 'col_2',
+      playerId: 'plr_1',
+      category: 'ARCHIVED_LOG',
+      rarity: 'RARE',
+      name: 'rare archived log',
+      acquiredAt: new Date('2026-03-10T00:00:00.000Z'),
+    });
+    expect(rare.node.wallet.credits).toBe(node.wallet.credits + 15);
+    expect(rare.node.wallet.parts).toBe(node.wallet.parts + 2);
+    expect(rare.bonusSummary).toBe('+15 credits, +2 parts');
+
+    const epic = engine.applyCollectibleRarityEffect(node, {
+      id: 'col_3',
+      playerId: 'plr_1',
+      category: 'MALWARE_SPECIMEN',
+      rarity: 'EPIC',
+      name: 'epic malware specimen',
+      acquiredAt: new Date('2026-03-10T00:00:00.000Z'),
+    });
+    expect(epic.node.wallet.credits).toBe(node.wallet.credits + 30);
+    expect(epic.node.wallet.parts).toBe(node.wallet.parts + 4);
+    expect(epic.node.wallet.cycles).toBe(node.wallet.cycles + 1);
+    expect(epic.bonusSummary).toBe('+30 credits, +4 parts, +1 cycles');
+  });
+
   it('creates deterministic daily tasks', () => {
     const now = new Date('2026-03-10T09:15:00.000Z');
     const engine = new GameEngine(new SequenceRandomSource([0.0]));
