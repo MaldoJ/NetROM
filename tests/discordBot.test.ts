@@ -50,12 +50,14 @@ describe('parseUpgradePath', () => {
 
 describe('formatProfileResponse', () => {
   it('includes collectible totals and rare counts', () => {
-    const message = formatProfileResponse('neo', 'DIAL_UP', 42, 'matrix', 'RELAY_NODE', 6, 2, 1, 3, 1);
+    const message = formatProfileResponse('neo', 'DIAL_UP', 42, 'matrix', 'RELAY_NODE', 6, 2, 1, 2, 1, 3, 1);
 
     expect(message).toContain('Handle: **neo** | Era: **DIAL_UP** | Rep: **42**');
     expect(message).toContain('Node: **matrix** (RELAY_NODE)');
-    expect(message).toContain('Collectibles: **6** total | **2** rare+ | **1** epic');
+    expect(message).toContain('Collectibles: **6** total | **3** rare+ | **1** epic');
+    expect(message).toContain('Rarity spread: C **2** | U **1** | R **2** | E **1**');
     expect(message).toContain('Sets: **1** complete | Categories unlocked: **3/3**');
+    expect(message).toContain('Forge rank: **INITIATE FORGE** | Prestige score: **19**');
   });
 });
 
@@ -70,6 +72,7 @@ describe('formatCollectionResponse', () => {
     expect(message).toContain('Category totals: ANSI **0** | ARCHIVE **0** | MALWARE **0**');
     expect(message).toContain('Set forge progress: **0/3** fragments toward set #1 | Missing pieces: **3**');
     expect(message).toContain('Category unlocks: **0/3**');
+    expect(message).toContain('Forge rank: **UNSEEDED**');
     expect(message).toContain('Recent drops: none yet.');
   });
 
@@ -84,6 +87,7 @@ describe('formatCollectionResponse', () => {
     expect(message).toContain('Category totals: ANSI **3** | ARCHIVE **2** | MALWARE **2**');
     expect(message).toContain('Set forge progress: **1/3** fragments toward set #3 | Missing pieces: **2**');
     expect(message).toContain('Category unlocks: **3/3**');
+    expect(message).toContain('Forge rank: **INITIATE FORGE**');
     expect(message).toContain('**Relic_SIGIL_RARE** [RARE] (ANSI_RELIC)');
     expect(message).toContain('**Log_PULSE_EPIC** [EPIC] (ARCHIVED_LOG)');
   });

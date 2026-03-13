@@ -3,7 +3,10 @@ import type { Collectible } from '../../domain/entities.js';
 
 type CollectibleSummaryRow = {
   total: number;
+  common_total: number;
+  uncommon_total: number;
   rare_or_better: number;
+  rare_total: number;
   epic_total: number;
   ansi_total: number;
   archive_total: number;
@@ -12,6 +15,9 @@ type CollectibleSummaryRow = {
 
 export type CollectibleSummary = {
   total: number;
+  commonTotal: number;
+  uncommonTotal: number;
+  rareTotal: number;
   rareOrBetter: number;
   epicTotal: number;
   ansiTotal: number;
@@ -52,7 +58,10 @@ export class MariaDbCollectibleRepository {
     const rows = await this.connection.query<CollectibleSummaryRow[]>(
       `SELECT
         COUNT(*) AS total,
+        SUM(CASE WHEN rarity = 'COMMON' THEN 1 ELSE 0 END) AS common_total,
+        SUM(CASE WHEN rarity = 'UNCOMMON' THEN 1 ELSE 0 END) AS uncommon_total,
         SUM(CASE WHEN rarity IN ('RARE', 'EPIC') THEN 1 ELSE 0 END) AS rare_or_better,
+        SUM(CASE WHEN rarity = 'RARE' THEN 1 ELSE 0 END) AS rare_total,
         SUM(CASE WHEN rarity = 'EPIC' THEN 1 ELSE 0 END) AS epic_total,
         SUM(CASE WHEN category = 'ANSI_RELIC' THEN 1 ELSE 0 END) AS ansi_total,
         SUM(CASE WHEN category = 'ARCHIVED_LOG' THEN 1 ELSE 0 END) AS archive_total,
@@ -71,6 +80,9 @@ export class MariaDbCollectibleRepository {
 
     return {
       total: Number(row?.total ?? 0),
+      commonTotal: Number(row?.common_total ?? 0),
+      uncommonTotal: Number(row?.uncommon_total ?? 0),
+      rareTotal: Number(row?.rare_total ?? 0),
       rareOrBetter: Number(row?.rare_or_better ?? 0),
       epicTotal: Number(row?.epic_total ?? 0),
       ansiTotal,
