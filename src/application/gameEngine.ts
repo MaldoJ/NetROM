@@ -12,6 +12,7 @@ import { MathRandomSource, type RandomSource } from './random.js';
 const BASE_RESOURCES = { credits: 100, data: 25, cycles: 5, parts: 10 };
 const DAILY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
   { scope: 'DAILY', key: 'RUN_SCANS', objectiveValue: 3, reward: { credits: 40, parts: 4, reputation: 15 } },
+  { scope: 'DAILY', key: 'CONNECT_TARGETS', objectiveValue: 3, reward: { credits: 45, parts: 3, reputation: 18 } },
   { scope: 'DAILY', key: 'CLAIM_REWARDS', objectiveValue: 2, reward: { credits: 55, parts: 2, reputation: 20 } },
 ];
 const WEEKLY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
@@ -136,6 +137,19 @@ export class GameEngine {
     };
   }
 
+  advanceProgressForAction(
+    progress: PlayerTaskProgress,
+    task: TaskDefinition,
+    action: 'SCAN' | 'CONNECT' | 'CLAIM' | 'UPGRADE',
+    now: Date = new Date(),
+  ): PlayerTaskProgress {
+    if (!this.matchesAction(task.key, action)) {
+      return progress;
+    }
+
+    return this.advanceTaskProgress(progress, task, 1, now);
+  }
+
   applyTaskReward(node: PlayerNode, player: Player, task: TaskDefinition): { node: PlayerNode; player: Player } {
     const nextNode = structuredClone(node);
     const nextPlayer = structuredClone(player);
@@ -178,6 +192,14 @@ export class GameEngine {
     if (path === 'STORAGE') next.storage += 1;
     if (path === 'CPU') next.processing += 1;
     return next;
+  }
+
+  private matchesAction(taskKey: TaskDefinition['key'], action: 'SCAN' | 'CONNECT' | 'CLAIM' | 'UPGRADE'): boolean {
+    if (taskKey === 'RUN_SCANS') return action === 'SCAN';
+    if (taskKey === 'CONNECT_TARGETS') return action === 'CONNECT';
+    if (taskKey === 'CLAIM_REWARDS') return action === 'CLAIM';
+    if (taskKey === 'UPGRADE_NODE') return action === 'UPGRADE';
+    return false;
   }
 
   private rewardHint(type: DiscoveryType): string {

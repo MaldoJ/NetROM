@@ -22,4 +22,4 @@ export type ResourceWallet = {
 
 export type TaskScope = 'DAILY' | 'WEEKLY';
 
-export type TaskKey = 'RUN_SCANS' | 'CLAIM_REWARDS' | 'UPGRADE_NODE';
+export type TaskKey = 'RUN_SCANS' | 'CONNECT_TARGETS' | 'CLAIM_REWARDS' | 'UPGRADE_NODE';
