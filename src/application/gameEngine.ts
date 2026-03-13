@@ -1,5 +1,5 @@
 import type { DiscoveryType, NodeArchetype } from '../domain/types.js';
-import type { Player, PlayerNode, ScanResult } from '../domain/entities.js';
+import type { Collectible, Player, PlayerNode, ScanResult } from '../domain/entities.js';
 import { MathRandomSource, type RandomSource } from './random.js';
 
 const BASE_RESOURCES = { credits: 100, data: 25, cycles: 5, parts: 10 };
@@ -78,6 +78,27 @@ export class GameEngine {
         break;
     }
     return next;
+  }
+
+
+
+  rollCollectible(playerId: string): Collectible | null {
+    if (this.random.next() >= 0.15) return null;
+
+    const categories: Collectible['category'][] = ['ANSI_RELIC', 'ARCHIVED_LOG', 'MALWARE_SPECIMEN'];
+    const rarities: Collectible['rarity'][] = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC'];
+
+    const category = categories[Math.floor(this.random.next() * categories.length)];
+    const rarity = rarities[Math.floor(this.random.next() * rarities.length)];
+
+    return {
+      id: `col_${Date.now()}_${Math.floor(this.random.next() * 10000)}`,
+      playerId,
+      category,
+      rarity,
+      name: `${rarity.toLowerCase()} ${category.toLowerCase().replace('_', ' ')}`,
+      acquiredAt: new Date(),
+    };
   }
 
   upgrade(node: PlayerNode, path: 'MODEM' | 'STORAGE' | 'CPU'): PlayerNode {

@@ -29,4 +29,21 @@ describe('GameEngine', () => {
     expect(scan.discoveryType).toBe('ARCHIVE_CACHE');
     expect(scan.threatLevel).toBe(3);
   });
+
+  it('rollCollectible returns deterministic collectible when roll succeeds', () => {
+    const engine = new GameEngine(new SequenceRandomSource([0.1, 0.0, 0.6, 0.4]));
+
+    const collectible = engine.rollCollectible('plr_1');
+
+    expect(collectible).not.toBeNull();
+    expect(collectible?.playerId).toBe('plr_1');
+    expect(collectible?.category).toBe('ANSI_RELIC');
+    expect(collectible?.rarity).toBe('RARE');
+  });
+
+  it('rollCollectible returns null when roll misses', () => {
+    const engine = new GameEngine(new SequenceRandomSource([0.9]));
+
+    expect(engine.rollCollectible('plr_1')).toBeNull();
+  });
 });
