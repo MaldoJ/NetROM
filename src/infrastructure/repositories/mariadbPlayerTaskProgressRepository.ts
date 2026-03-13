@@ -40,12 +40,15 @@ export class MariaDbPlayerTaskProgressRepository {
     );
   }
 
-  async markRewardClaimed(playerId: string, taskId: string, claimedAt: Date): Promise<void> {
-    await this.connection.query(
+  async markRewardClaimed(playerId: string, taskId: string, claimedAt: Date): Promise<boolean> {
+    const result = await this.connection.query(
       `UPDATE player_task_progress
        SET reward_claimed_at = ?
        WHERE player_id = ? AND task_id = ? AND completed_at IS NOT NULL AND reward_claimed_at IS NULL`,
       [claimedAt, playerId, taskId],
     );
+
+    const affectedRows = (result as { affectedRows?: number }).affectedRows ?? 0;
+    return affectedRows > 0;
   }
 }
