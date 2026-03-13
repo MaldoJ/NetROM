@@ -33,6 +33,7 @@ const HELP_TEXT = [
   '.sh collection',
   '.sh leaderboard',
   '.sh factions',
+  '.sh factions shop',
   '.sh resume',
   '.sh status',
   '.sh tasks',
@@ -160,6 +161,13 @@ export function createDiscordBotClient(): Client {
         await factionReputation.ensurePlayerRows(existingPlayer.id);
         const standings = await factionReputation.listByPlayerId(existingPlayer.id);
         await message.reply(formatFactionResponse(standings));
+        return;
+      }
+
+      if (content === '.sh factions shop') {
+        await factionReputation.ensurePlayerRows(existingPlayer.id);
+        const standings = await factionReputation.listByPlayerId(existingPlayer.id);
+        await message.reply(formatFactionShopResponse(standings));
         return;
       }
 
@@ -467,6 +475,23 @@ function factionLabel(faction: Faction): string {
   if (faction === 'NULL_SECTOR') return 'Null Sector';
   return 'Lattice Collective';
 }
+
+export function formatFactionShopResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
+  if (standings.length === 0) {
+    return 'No faction standing found yet. Complete contracts to unlock faction shop previews.';
+  }
+
+  const lines = standings
+    .slice()
+    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
+    .map((entry) => {
+      const lockStatus = entry.rank >= 2 ? 'UNLOCKED' : 'LOCKED';
+      return `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Access ${lockStatus} (requires rank 2)`;
+    });
+
+  return `Faction shop preview\n${lines.join('\n')}`;
+}
+
 
 export function formatFactionResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
   if (standings.length === 0) {

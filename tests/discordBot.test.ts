@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCollectionResponse, formatFactionResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatCollectionResponse, formatFactionResponse, formatFactionShopResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
 import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
@@ -142,5 +142,25 @@ describe('formatFactionResponse', () => {
     expect(message).toContain('Faction standings');
     expect(message).toContain('**Helix Syndicate** | Rep 22 | Rank 2');
     expect(message).toContain('**Null Sector** | Rep 10 | Rank 1');
+  });
+});
+
+
+describe('formatFactionShopResponse', () => {
+  it('shows locked preview state when no factions are initialized', () => {
+    const message = formatFactionShopResponse([]);
+
+    expect(message).toContain('No faction standing found yet');
+  });
+
+  it('renders rank-gated access by faction standing', () => {
+    const message = formatFactionShopResponse([
+      { faction: 'NULL_SECTOR', reputation: 15, rank: 1 },
+      { faction: 'HELIX_SYNDICATE', reputation: 45, rank: 2 },
+    ]);
+
+    expect(message).toContain('Faction shop preview');
+    expect(message).toContain('**Helix Syndicate** | Rank 2 | Access UNLOCKED');
+    expect(message).toContain('**Null Sector** | Rank 1 | Access LOCKED');
   });
 });
