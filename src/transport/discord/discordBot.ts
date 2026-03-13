@@ -113,6 +113,9 @@ export function createDiscordBotClient(): Client {
             node.archetype,
             collectibleSummary.total,
             collectibleSummary.rareOrBetter,
+            collectibleSummary.epicTotal,
+            collectibleSummary.categoriesUnlocked,
+            collectibleSummary.completedSets,
           ),
         );
         return;
@@ -438,10 +441,14 @@ export function formatProfileResponse(
   nodeArchetype: string,
   totalCollectibles: number,
   rareCollectibles: number,
+  epicCollectibles: number,
+  categoriesUnlocked: number,
+  completedSets: number,
 ): string {
   return (
     `Handle: **${handle}** | Era: **${era}** | Rep: **${reputation}**\n` +
     `Node: **${nodeName}** (${nodeArchetype})\n` +
-    `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+`
+    `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+ | **${epicCollectibles}** epic\n` +
+    `Sets: **${completedSets}** complete | Categories unlocked: **${categoriesUnlocked}/3**`
   );
 }
