@@ -3,6 +3,7 @@ export type ShellCommand =
   | '.sh help'
   | '.sh status'
   | '.sh profile'
+  | '.sh leaderboard'
   | '.sh scan'
   | '.sh connect'
   | '.sh claim'
@@ -18,6 +19,7 @@ export function isSupportedCommand(content: string): content is ShellCommand {
     '.sh help',
     '.sh status',
     '.sh profile',
+    '.sh leaderboard',
     '.sh scan',
     '.sh connect',
     '.sh claim',

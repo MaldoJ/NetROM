@@ -8,6 +8,7 @@ describe('command router', () => {
 
   it('supports mvp shell commands', () => {
     expect(isSupportedCommand('.sh status')).toBe(true);
+    expect(isSupportedCommand('.sh leaderboard')).toBe(true);
     expect(isSupportedCommand('.sh market')).toBe(false);
   });
 });
