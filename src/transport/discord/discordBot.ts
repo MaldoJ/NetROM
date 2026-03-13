@@ -22,6 +22,7 @@ const HELP_TEXT = [
   '```',
   '.sh start [handle] [node-name] [archetype]',
   '.sh profile',
+  '.sh collection',
   '.sh leaderboard',
   '.sh resume',
   '.sh status',
@@ -94,6 +95,15 @@ export function createDiscordBotClient(): Client {
           await message.reply('Run this command in your NETROM private thread.');
           return;
         }
+      }
+
+
+      if (content === '.sh collection') {
+        const collectibleSummary = await collectibles.getSummaryByPlayerId(existingPlayer.id);
+        const recentCollectibles = await collectibles.listRecentByPlayerId(existingPlayer.id, 5);
+
+        await message.reply(formatCollectionResponse(collectibleSummary.total, collectibleSummary.completedSets, recentCollectibles));
+        return;
       }
 
       if (content === '.sh profile') {
@@ -491,6 +501,21 @@ export function formatProfileResponse(
     `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+ | **${epicCollectibles}** epic\n` +
     `Sets: **${completedSets}** complete | Categories unlocked: **${categoriesUnlocked}/3**`
   );
+}
+
+
+export function formatCollectionResponse(totalCollectibles: number, completedSets: number, recentCollectibles: { name: string; rarity: string; category: string }[]): string {
+  const recentLine =
+    recentCollectibles.length === 0
+      ? 'Recent drops: none yet. Run `.sh claim` to start collecting.'
+      : `Recent drops: ${recentCollectibles
+          .map((collectible) => `**${collectible.name}** [${collectible.rarity}] (${collectible.category})`)
+          .join(' | ')}`;
+
+  return `Collection vault
+Total collectibles: **${totalCollectibles}**
+Complete sets forged: **${completedSets}**
+${recentLine}`;
 }
 
 export function formatTaskSnapshot(task: TaskDefinition, progressValue: number, completedAt: Date | null): string {

@@ -18,6 +18,15 @@ export type CollectibleSummary = {
   completedSets: number;
 };
 
+type CollectibleRecordRow = {
+  id: string;
+  player_id: string;
+  category: Collectible['category'];
+  rarity: Collectible['rarity'];
+  name: string;
+  acquired_at: Date;
+};
+
 export class MariaDbCollectibleRepository {
   constructor(private readonly connection: Connection) {}
 
@@ -64,5 +73,25 @@ export class MariaDbCollectibleRepository {
       categoriesUnlocked,
       completedSets,
     };
+  }
+
+  async listRecentByPlayerId(playerId: string, limit = 5): Promise<Collectible[]> {
+    const rows = await this.connection.query<CollectibleRecordRow[]>(
+      `SELECT id, player_id, category, rarity, name, acquired_at
+       FROM collectibles
+       WHERE player_id = ?
+       ORDER BY acquired_at DESC
+       LIMIT ?`,
+      [playerId, limit],
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      playerId: row.player_id,
+      category: row.category,
+      rarity: row.rarity,
+      name: row.name,
+      acquiredAt: new Date(row.acquired_at),
+    }));
   }
 }
