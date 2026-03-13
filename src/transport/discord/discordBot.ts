@@ -25,6 +25,7 @@ const HELP_TEXT = [
   '.sh leaderboard',
   '.sh resume',
   '.sh status',
+  '.sh tasks',
   '.sh scan',
   '.sh connect',
   '.sh claim',
@@ -77,7 +78,7 @@ export function createDiscordBotClient(): Client {
         return;
       }
 
-      const threadOnlyCommands = new Set(['.sh help', '.sh status', '.sh scan', '.sh connect', '.sh claim']);
+      const threadOnlyCommands = new Set(['.sh help', '.sh status', '.sh tasks', '.sh scan', '.sh connect', '.sh claim']);
       if (content.startsWith('.sh upgrade')) {
         threadOnlyCommands.add('.sh upgrade');
       }
@@ -145,6 +146,23 @@ export function createDiscordBotClient(): Client {
           `Integrity ${node.integrity}% | BW ${node.bandwidth} | Storage ${node.storage} | CPU ${node.processing} | Sec ${node.security}\n` +
             `Wallet => credits:${node.wallet.credits} data:${node.wallet.data} cycles:${node.wallet.cycles} parts:${node.wallet.parts}`,
         );
+        return;
+      }
+
+      if (content === '.sh tasks') {
+        const activeTasks = await tasks.findActive(new Date());
+        if (activeTasks.length === 0) {
+          await message.reply('No active objectives available right now. Check back soon.');
+          return;
+        }
+
+        const lines: string[] = [];
+        for (const task of activeTasks) {
+          const progress = await taskProgress.getOrCreate(existingPlayer.id, task.id);
+          lines.push(formatTaskSnapshot(task, progress.progress_value, progress.completed_at));
+        }
+
+        await message.reply(`Active objectives\n${lines.join('\n')}`);
         return;
       }
 
@@ -458,4 +476,11 @@ export function formatProfileResponse(
     `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+ | **${epicCollectibles}** epic\n` +
     `Sets: **${completedSets}** complete | Categories unlocked: **${categoriesUnlocked}/3**`
   );
+}
+
+export function formatTaskSnapshot(task: TaskDefinition, progressValue: number, completedAt: Date | null): string {
+  const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
+  const remaining = Math.max(0, task.objectiveValue - clamped);
+  const state = completedAt ? '✅' : '🕓';
+  return `${state} [${task.scope}] ${task.key} ${clamped}/${task.objectiveValue} (${remaining} left) — Reward ${task.reward.credits} credits, ${task.reward.parts} parts, ${task.reward.reputation} rep`;
 }

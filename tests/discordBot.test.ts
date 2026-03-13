@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatProfileResponse, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
   it('uses defaults when args are missing', () => {
@@ -43,5 +44,30 @@ describe('formatProfileResponse', () => {
     expect(message).toContain('Node: **matrix** (RELAY_NODE)');
     expect(message).toContain('Collectibles: **6** total | **2** rare+ | **1** epic');
     expect(message).toContain('Sets: **1** complete | Categories unlocked: **3/3**');
+  });
+});
+
+describe('formatTaskSnapshot', () => {
+  const task: TaskDefinition = {
+    id: 'daily_1',
+    scope: 'DAILY',
+    key: 'RUN_SCANS',
+    objectiveValue: 3,
+    reward: { credits: 40, parts: 4, reputation: 15 },
+    activeFrom: new Date('2026-01-01T00:00:00Z'),
+    activeTo: new Date('2026-01-01T23:59:59Z'),
+  };
+
+  it('shows in-progress state with remaining count', () => {
+    const line = formatTaskSnapshot(task, 1, null);
+
+    expect(line).toContain('🕓 [DAILY] RUN_SCANS 1/3 (2 left)');
+    expect(line).toContain('Reward 40 credits, 4 parts, 15 rep');
+  });
+
+  it('shows completed state when completedAt is set', () => {
+    const line = formatTaskSnapshot(task, 3, new Date('2026-01-01T12:00:00Z'));
+
+    expect(line).toContain('✅ [DAILY] RUN_SCANS 3/3 (0 left)');
   });
 });
