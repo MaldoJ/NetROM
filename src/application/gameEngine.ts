@@ -244,6 +244,30 @@ export class GameEngine {
     };
   }
 
+  applyCollectibleRarityEffect(node: PlayerNode, collectible: Collectible): { node: PlayerNode; bonusSummary: string } {
+    const nextNode = structuredClone(node);
+
+    if (collectible.rarity === 'UNCOMMON') {
+      nextNode.wallet.data += 10;
+      return { node: nextNode, bonusSummary: '+10 data' };
+    }
+
+    if (collectible.rarity === 'RARE') {
+      nextNode.wallet.credits += 15;
+      nextNode.wallet.parts += 2;
+      return { node: nextNode, bonusSummary: '+15 credits, +2 parts' };
+    }
+
+    if (collectible.rarity === 'EPIC') {
+      nextNode.wallet.credits += 30;
+      nextNode.wallet.parts += 4;
+      nextNode.wallet.cycles += 1;
+      return { node: nextNode, bonusSummary: '+30 credits, +4 parts, +1 cycles' };
+    }
+
+    return { node: nextNode, bonusSummary: 'no bonus' };
+  }
+
   upgrade(node: PlayerNode, path: 'MODEM' | 'STORAGE' | 'CPU'): PlayerNode {
     const next = structuredClone(node);
     if (next.wallet.credits < 50 || next.wallet.parts < 5) {
