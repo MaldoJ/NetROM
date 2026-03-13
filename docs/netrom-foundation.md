@@ -88,6 +88,7 @@ id (pk), player_id (fk), guild_id, core_channel_id, thread_channel_id, status, c
 - `.sh start`: creates player + node and opens private thread.
 - `.sh profile`: returns public snapshot.
 - `.sh leaderboard`: returns top reputation/resources.
+- `.sh factions`: shows current faction standing tracks (Phase 2 progression hook).
 
 ### Private thread
 - `.sh help`: command catalog.
@@ -137,3 +138,10 @@ Phase 1 acceptance criteria are now locked and met in this repository.
 ### Phase transition gate
 
 With the criteria above locked and met, the project is ready to enter Phase 2 (progression + factions).
+
+
+## 9) Phase 2 kickoff status
+
+- Added persistent player-faction reputation rows for Helix Syndicate, Null Sector, and Lattice Collective.
+- Added `.sh factions` command surface to view faction standings in-game.
+- This is the first increment of Phase 2 progression and will be extended with contracts, faction tasks, and shop unlock lines.
