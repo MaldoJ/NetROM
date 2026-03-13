@@ -564,15 +564,20 @@ function reputationToNextRank(reputation: number): number {
   return currentRankFloor + 100 - reputation;
 }
 
+function sortFactionStandings(
+  standings: Array<{ faction: Faction; reputation: number; rank: number }>,
+): Array<{ faction: Faction; reputation: number; rank: number }> {
+  return standings
+    .slice()
+    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction));
+}
+
 export function formatFactionShopResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to unlock faction shop previews.';
   }
 
-  const lines = standings
-    .slice()
-    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
-    .map((entry) => {
+  const lines = sortFactionStandings(standings).map((entry) => {
       const lockStatus = entry.rank >= 2 ? 'UNLOCKED' : 'LOCKED';
       return `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Access ${lockStatus} (requires rank 2)`;
     });
@@ -587,10 +592,7 @@ export function formatFactionContractsResponse(standings: Array<{ faction: Facti
     return 'No faction standing found yet. Complete contracts to unlock contract tiers.';
   }
 
-  const lines = standings
-    .slice()
-    .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction))
-    .map((entry) => {
+  const lines = sortFactionStandings(standings).map((entry) => {
       const availableTier = entry.rank >= 3 ? 'Tier III' : entry.rank >= 2 ? 'Tier II' : 'Tier I';
       const nextUnlock = entry.rank >= 3 ? 'MAX' : `Rank ${entry.rank + 1}`;
       return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextUnlock}`;
@@ -604,10 +606,11 @@ export function formatFactionResponse(standings: Array<{ faction: Faction; reput
     return 'No faction standing found yet. Complete contracts to begin progression.';
   }
 
-  const lines = standings.map((entry) => {
-    const repNeeded = reputationToNextRank(entry.reputation);
-    return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
-  });
+  const lines = sortFactionStandings(standings).map((entry) => {
+      const repNeeded = reputationToNextRank(entry.reputation);
+      return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
+    });
+
   return `Faction standings\n${lines.join('\n')}`;
 }
 
