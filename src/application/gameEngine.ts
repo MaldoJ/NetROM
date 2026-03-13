@@ -129,6 +129,10 @@ export class GameEngine {
       return progress;
     }
 
+    if (increment <= 0) {
+      return progress;
+    }
+
     const nextValue = Math.min(progress.progressValue + increment, task.objectiveValue);
     return {
       ...progress,

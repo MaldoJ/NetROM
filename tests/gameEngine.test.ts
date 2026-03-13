@@ -75,6 +75,22 @@ describe('GameEngine', () => {
     expect(match.progressValue).toBe(1);
   });
 
+
+  it('ignores non-positive task progress increments', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.0]));
+    const task = engine.createActiveTask('DAILY', now);
+    const base = engine.initializeTaskProgress('plr_1', task);
+
+    const zero = engine.advanceTaskProgress(base, task, 0, now);
+    expect(zero.progressValue).toBe(0);
+    expect(zero.completedAt).toBeNull();
+
+    const negative = engine.advanceTaskProgress(base, task, -2, now);
+    expect(negative.progressValue).toBe(0);
+    expect(negative.completedAt).toBeNull();
+  });
+
   it('completes task progress and applies reward', () => {
     const now = new Date('2026-03-10T09:15:00.000Z');
     const engine = new GameEngine(new SequenceRandomSource([0.5]));
