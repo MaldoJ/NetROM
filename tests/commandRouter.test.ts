@@ -13,6 +13,7 @@ describe('command router', () => {
     expect(isSupportedCommand('.sh leaderboard')).toBe(true);
     expect(isSupportedCommand('.sh resume')).toBe(true);
     expect(isSupportedCommand('.sh tasks')).toBe(true);
+    expect(isSupportedCommand('.sh tasks claim')).toBe(true);
     expect(isSupportedCommand('.sh upgrade')).toBe(true);
     expect(isSupportedCommand('.sh upgrade modem')).toBe(true);
     expect(isSupportedCommand('.sh   upgrade   storage')).toBe(true);
