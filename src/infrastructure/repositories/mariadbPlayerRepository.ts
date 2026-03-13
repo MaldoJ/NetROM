@@ -41,6 +41,18 @@ export class MariaDbPlayerRepository implements PlayerRepository {
 
     return rows[0] ? mapPlayer(rows[0]) : null;
   }
+
+  async listTopByReputation(limit: number): Promise<Player[]> {
+    const rows = await this.connection.query<PlayerRow[]>(
+      `SELECT id, discord_user_id, handle, current_era, reputation, created_at
+       FROM players
+       ORDER BY reputation DESC, created_at ASC
+       LIMIT ?`,
+      [limit],
+    );
+
+    return rows.map(mapPlayer);
+  }
 }
 
 function mapPlayer(row: PlayerRow): Player {

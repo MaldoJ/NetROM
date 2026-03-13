@@ -17,6 +17,7 @@ const HELP_TEXT = [
   '```',
   '.sh start [handle] [node-name] [archetype]',
   '.sh profile',
+  '.sh leaderboard',
   '.sh status',
   '.sh scan',
   '.sh connect',
@@ -75,6 +76,19 @@ export function createDiscordBotClient(): Client {
         return;
       }
 
+      if (content === '.sh leaderboard') {
+        const leaders = await players.listTopByReputation(10);
+        if (leaders.length === 0) {
+          await message.reply('No operators online yet. Run `.sh start` to become the first.');
+          return;
+        }
+
+        const lines = leaders.map((leader, index) => `${index + 1}. **${leader.handle}** — Rep ${leader.reputation} (${leader.currentEra})`);
+        await message.reply(`Leaderboard\n${lines.join('\n')}`);
+        return;
+      }
+
+
       if (content === '.sh status') {
         const node = await nodes.findByPlayerId(existingPlayer.id);
         if (!node) {
@@ -108,7 +122,7 @@ export function createDiscordBotClient(): Client {
         }
 
         const activeScan = engine.connect(scan);
-        await message.reply(`Handshake complete with **${activeScan.discoveryType}**. Run \.sh claim to capture rewards.`);
+        await message.reply(`Handshake complete with **${activeScan.discoveryType}**. Run \`.sh claim\` to capture rewards.`);
         return;
       }
 

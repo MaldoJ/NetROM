@@ -4,6 +4,7 @@ export interface PlayerRepository {
   create(player: Player): Promise<void>;
   findByDiscordUserId(discordUserId: string): Promise<Player | null>;
   findById(id: string): Promise<Player | null>;
+  listTopByReputation(limit: number): Promise<Player[]>;
 }
 
 export interface PlayerNodeRepository {
