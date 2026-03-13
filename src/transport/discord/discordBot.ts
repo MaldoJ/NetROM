@@ -476,6 +476,11 @@ function factionLabel(faction: Faction): string {
   return 'Lattice Collective';
 }
 
+function reputationToNextRank(reputation: number): number {
+  const currentRankFloor = Math.floor(reputation / 100) * 100;
+  return currentRankFloor + 100 - reputation;
+}
+
 export function formatFactionShopResponse(standings: Array<{ faction: Faction; reputation: number; rank: number }>): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to unlock faction shop previews.';
@@ -498,7 +503,10 @@ export function formatFactionResponse(standings: Array<{ faction: Faction; reput
     return 'No faction standing found yet. Complete contracts to begin progression.';
   }
 
-  const lines = standings.map((entry) => `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank}`);
+  const lines = standings.map((entry) => {
+    const repNeeded = reputationToNextRank(entry.reputation);
+    return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
+  });
   return `Faction standings\n${lines.join('\n')}`;
 }
 
