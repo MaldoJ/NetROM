@@ -117,17 +117,23 @@ id (pk), player_id (fk), guild_id, core_channel_id, thread_channel_id, status, c
 ## Phase 4: advanced systems + polish
 - Cooperative ops, asynchronous PvP raids, malware loadout meta, seasonal world events, deep terminal UX pack.
 
-## 8) Phase 1 implementation started in this repo
+## 8) Phase 1 completion status (locked)
 
-Implemented now:
-- Domain entities/types for players, nodes, scan results, collectibles.
-- `GameEngine` use-cases for onboarding, scanning, claiming, and upgrading.
-- `.sh` command normalization + supported command map.
-- TypeScript project/test scaffold.
+Phase 1 acceptance criteria are now locked and met in this repository.
 
-Immediate next implementation steps:
-1. Expand objective depth beyond basic hooks (task generation, rewards, completion UX).
-2. Add richer collectible systems (set tracking, rarity effects, profile surfacing).
-3. Harden session lifecycle (thread archival handling, recovery, and re-provisioning).
-4. Advance progression tuning (reputation gain paths, era-gate balancing, upgrade economy).
-5. Start Phase 2 faction progression once Phase 1 acceptance criteria are locked.
+### Acceptance criteria
+
+| Area | Phase 1 criteria | Status |
+| --- | --- | --- |
+| Onboarding + sessions | `.sh start` provisions player/node and creates private thread session. `.sh resume` restores archived/missing sessions and re-provisions thread when needed. | ✅ Complete |
+| Node state + wallet | Persistent node stats + wallet resources (credits/data/cycles/parts) are loaded and mutated through game actions. | ✅ Complete |
+| Core loop | `.sh scan` → `.sh connect` → `.sh claim` flow implemented with expiring targets and deterministic reward packets. | ✅ Complete |
+| Upgrades | `.sh upgrade <modem|storage|cpu>` consumes resources and advances node capabilities. | ✅ Complete |
+| Objectives | Daily + weekly tasks are generated, tracked by action hooks, surfaced with progress, and paid out via `.sh tasks claim`. | ✅ Complete |
+| Collectibles | Claim loop can drop collectibles with rarity effects, collection summary, set forge progression, and profile surfacing. | ✅ Complete |
+| Social surfaces | `.sh profile`, `.sh collection`, and `.sh leaderboard` provide MVP public/progression visibility. | ✅ Complete |
+| Quality gate | Test suite validates game engine, command routing, loop behavior, and discord formatting helpers. | ✅ Complete |
+
+### Phase transition gate
+
+With the criteria above locked and met, the project is ready to enter Phase 2 (progression + factions).
