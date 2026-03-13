@@ -33,6 +33,7 @@ const HELP_TEXT = [
   '.sh resume',
   '.sh status',
   '.sh tasks',
+  '.sh tasks claim',
   '.sh scan',
   '.sh connect',
   '.sh claim',
@@ -177,6 +178,12 @@ export function createDiscordBotClient(): Client {
         return;
       }
 
+      if (content === '.sh tasks claim') {
+        const rewardClaimMessage = await claimCompletedTaskRewards(existingPlayer.id, players, nodes, tasks, taskProgress, engine);
+        await message.reply(rewardClaimMessage);
+        return;
+      }
+
       if (content === '.sh tasks') {
         await ensureActiveTasks(tasks, engine);
         const activeTasks = await tasks.findActive(new Date());
@@ -188,7 +195,7 @@ export function createDiscordBotClient(): Client {
         const lines: string[] = [];
         for (const task of activeTasks) {
           const progress = await taskProgress.getOrCreate(existingPlayer.id, task.id);
-          lines.push(formatTaskSnapshot(task, progress.progress_value, progress.completed_at));
+          lines.push(formatTaskSnapshot(task, progress.progress_value, progress.completed_at, progress.reward_claimed_at));
         }
 
         await message.reply(`Active objectives\n${lines.join('\n')}`);
@@ -198,7 +205,7 @@ export function createDiscordBotClient(): Client {
       if (content === '.sh scan') {
         const scan = engine.scan(existingPlayer.id);
         await scans.create(scan);
-        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'SCAN', players, nodes, tasks, taskProgress, engine);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'SCAN', tasks, taskProgress, engine);
         await message.reply(
           `Scan locked: **${scan.discoveryType}** | Threat ${scan.threatLevel}/3\nHint: ${scan.rewardHint}\nExpires: <t:${Math.floor(
             scan.expiresAt.getTime() / 1000,
@@ -215,7 +222,7 @@ export function createDiscordBotClient(): Client {
         }
 
         const activeScan = engine.connect(scan);
-        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CONNECT', players, nodes, tasks, taskProgress, engine);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CONNECT', tasks, taskProgress, engine);
         await message.reply(
           `Handshake complete with **${activeScan.discoveryType}**. Run \`.sh claim\` to capture rewards.${taskUpdateMessage ? `
 ${taskUpdateMessage}` : ''}`,
@@ -240,7 +247,7 @@ ${taskUpdateMessage}` : ''}`,
         await nodes.update(upgraded);
         await scans.markResolved(scan.id);
 
-        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', players, nodes, tasks, taskProgress, engine);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', tasks, taskProgress, engine);
 
         const collectible = engine.rollCollectible(existingPlayer.id);
         if (collectible) {
@@ -272,7 +279,7 @@ ${taskUpdateMessage}` : ''),
 
         const upgraded = engine.upgrade(node, path);
         await nodes.update(upgraded);
-        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'UPGRADE', players, nodes, tasks, taskProgress, engine);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'UPGRADE', tasks, taskProgress, engine);
         await message.reply(
           `Upgrade applied: **${path}**. BW ${upgraded.bandwidth} | Storage ${upgraded.storage} | CPU ${upgraded.processing}${taskUpdateMessage ? `\n${taskUpdateMessage}` : ''}`,
         );
@@ -295,8 +302,6 @@ ${taskUpdateMessage}` : ''),
 async function applyTaskActionProgress(
   playerId: string,
   action: 'SCAN' | 'CONNECT' | 'CLAIM' | 'UPGRADE',
-  players: MariaDbPlayerRepository,
-  nodes: MariaDbPlayerNodeRepository,
   tasks: MariaDbTaskRepository,
   taskProgress: MariaDbPlayerTaskProgressRepository,
   engine: GameEngine,
@@ -304,10 +309,6 @@ async function applyTaskActionProgress(
   await ensureActiveTasks(tasks, engine);
   const activeTasks = await tasks.findActive(new Date());
   if (activeTasks.length === 0) return null;
-
-  const player = await players.findById(playerId);
-  const node = await nodes.findByPlayerId(playerId);
-  if (!player || !node) return null;
 
   const progressUpdates: string[] = [];
   const completions: TaskDefinition[] = [];
@@ -348,22 +349,59 @@ async function applyTaskActionProgress(
   const lines: string[] = [`Task progress: ${progressUpdates.join(' | ')}`];
 
   if (completions.length > 0) {
-    let nextPlayer: Player = player;
-    let nextNode: PlayerNode = node;
-
-    for (const task of completions) {
-      const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
-      nextNode = rewarded.node;
-      nextPlayer = rewarded.player;
-    }
-
-    await nodes.update(nextNode);
-    await players.updateReputation(nextPlayer.id, nextPlayer.reputation);
-
-    lines.push(...completions.map((task) => `Task complete: **${task.key}** (${engine.formatTaskReward(task)})`));
+    lines.push(...completions.map((task) => `Task complete: **${task.key}** (${engine.formatTaskReward(task)}). Run \`.sh tasks claim\`.`));
   }
 
   return lines.join('\n');
+}
+
+async function claimCompletedTaskRewards(
+  playerId: string,
+  players: MariaDbPlayerRepository,
+  nodes: MariaDbPlayerNodeRepository,
+  tasks: MariaDbTaskRepository,
+  taskProgress: MariaDbPlayerTaskProgressRepository,
+  engine: GameEngine,
+): Promise<string> {
+  await ensureActiveTasks(tasks, engine);
+  const activeTasks = await tasks.findActive(new Date());
+  if (activeTasks.length === 0) {
+    return 'No active objectives available right now. Check back soon.';
+  }
+
+  const player = await players.findById(playerId);
+  const node = await nodes.findByPlayerId(playerId);
+  if (!player || !node) {
+    return 'Unable to claim objective payouts right now.';
+  }
+
+  let nextPlayer: Player = player;
+  let nextNode: PlayerNode = node;
+  const claimLines: string[] = [];
+  const claimTime = new Date();
+
+  for (const task of activeTasks) {
+    const progress = await taskProgress.getOrCreate(playerId, task.id);
+    if (!progress.completed_at || progress.reward_claimed_at) {
+      continue;
+    }
+
+    const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
+    nextNode = rewarded.node;
+    nextPlayer = rewarded.player;
+
+    await taskProgress.markRewardClaimed(playerId, task.id, claimTime);
+    claimLines.push(`Claimed [${task.scope}] ${taskLabel(task.key)} => ${engine.formatTaskReward(task)}`);
+  }
+
+  if (claimLines.length === 0) {
+    return 'No completed objective payouts ready to claim. Finish tasks first.';
+  }
+
+  await nodes.update(nextNode);
+  await players.updateReputation(nextPlayer.id, nextPlayer.reputation);
+
+  return `Objective payouts credited:\n${claimLines.join('\n')}`;
 }
 
 async function ensureActiveTasks(tasks: MariaDbTaskRepository, engine: GameEngine, now: Date = new Date()): Promise<void> {
@@ -580,10 +618,15 @@ Forge rank: **${prestigeTier}**
 ${recentLine}`;
 }
 
-export function formatTaskSnapshot(task: TaskDefinition, progressValue: number, completedAt: Date | null): string {
+export function formatTaskSnapshot(task: TaskDefinition, progressValue: number, completedAt: Date | null, rewardClaimedAt: Date | null): string {
   const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
   const remaining = Math.max(0, task.objectiveValue - clamped);
-  const state = completedAt ? '✅' : '🕓';
+  const timeRemainingMs = Math.max(0, task.activeTo.getTime() - Date.now());
+  const hoursRemaining = Math.floor(timeRemainingMs / (1000 * 60 * 60));
+  const minutesRemaining = Math.floor((timeRemainingMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  const state = completedAt ? (rewardClaimedAt ? '🟣' : '✅') : '🕓';
+  const claimState = completedAt ? (rewardClaimedAt ? 'payout claimed' : 'payout ready') : 'in progress';
   const progressLabel = formatTaskProgressLabel(task, clamped);
-  return `${state} [${task.scope}] ${progressLabel} (${remaining} left) — ${taskLabel(task.key)} payout: ${task.reward.credits} credits, ${task.reward.parts} parts, ${task.reward.reputation} rep`;
+  return `${state} [${task.scope}] ${progressLabel} (${remaining} left, ${hoursRemaining}h ${minutesRemaining}m remaining, ${claimState}) — ${taskLabel(task.key)} payout: ${task.reward.credits} credits, ${task.reward.parts} parts, ${task.reward.reputation} rep`;
 }

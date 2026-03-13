@@ -6,6 +6,7 @@ export type TaskProgressRow = {
   task_id: string;
   progress_value: number;
   completed_at: Date | null;
+  reward_claimed_at: Date | null;
 };
 
 export class MariaDbPlayerTaskProgressRepository {
@@ -20,7 +21,7 @@ export class MariaDbPlayerTaskProgressRepository {
     );
 
     const rows = await this.connection.query<TaskProgressRow[]>(
-      `SELECT id, player_id, task_id, progress_value, completed_at
+      `SELECT id, player_id, task_id, progress_value, completed_at, reward_claimed_at
        FROM player_task_progress
        WHERE player_id = ? AND task_id = ?
        LIMIT 1`,
@@ -36,6 +37,15 @@ export class MariaDbPlayerTaskProgressRepository {
        SET progress_value = ?, completed_at = ?
        WHERE player_id = ? AND task_id = ?`,
       [progressValue, completedAt, playerId, taskId],
+    );
+  }
+
+  async markRewardClaimed(playerId: string, taskId: string, claimedAt: Date): Promise<void> {
+    await this.connection.query(
+      `UPDATE player_task_progress
+       SET reward_claimed_at = ?
+       WHERE player_id = ? AND task_id = ? AND completed_at IS NOT NULL AND reward_claimed_at IS NULL`,
+      [claimedAt, playerId, taskId],
     );
   }
 }
