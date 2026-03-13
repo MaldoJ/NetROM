@@ -107,4 +107,14 @@ describe('GameEngine', () => {
     expect(rewarded.node.wallet.parts).toBe(node.wallet.parts + task.reward.parts);
     expect(rewarded.player.reputation).toBe(player.reputation + task.reward.reputation);
   });
+
+  it('formats task progress and reward summaries for UX', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.0]));
+    const task = engine.createActiveTask('DAILY', now);
+
+    expect(engine.formatTaskProgress(task, 2)).toBe('RUN_SCANS 2/3');
+    expect(engine.formatTaskProgress(task, 8)).toBe('RUN_SCANS 3/3');
+    expect(engine.formatTaskReward(task)).toBe('+40 credits, +4 parts, +15 rep');
+  });
 });

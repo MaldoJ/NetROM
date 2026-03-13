@@ -165,6 +165,15 @@ export class GameEngine {
     return { node: nextNode, player: nextPlayer };
   }
 
+  formatTaskProgress(task: TaskDefinition, progressValue: number): string {
+    const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
+    return `${task.key} ${clamped}/${task.objectiveValue}`;
+  }
+
+  formatTaskReward(task: TaskDefinition): string {
+    return `+${task.reward.credits} credits, +${task.reward.parts} parts, +${task.reward.reputation} rep`;
+  }
+
   rollCollectible(playerId: string): Collectible | null {
     if (this.random.next() >= 0.15) return null;
 
