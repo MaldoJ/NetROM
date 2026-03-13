@@ -59,6 +59,22 @@ describe('GameEngine', () => {
     expect(task.activeTo.toISOString()).toBe('2026-03-10T23:59:59.999Z');
   });
 
+
+  it('advances only matching task action progress', () => {
+    const now = new Date('2026-03-10T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.34]));
+    const task = engine.createActiveTask('DAILY', now);
+
+    expect(task.key).toBe('CONNECT_TARGETS');
+
+    const base = engine.initializeTaskProgress('plr_1', task);
+    const mismatch = engine.advanceProgressForAction(base, task, 'SCAN', now);
+    expect(mismatch.progressValue).toBe(0);
+
+    const match = engine.advanceProgressForAction(base, task, 'CONNECT', now);
+    expect(match.progressValue).toBe(1);
+  });
+
   it('completes task progress and applies reward', () => {
     const now = new Date('2026-03-10T09:15:00.000Z');
     const engine = new GameEngine(new SequenceRandomSource([0.5]));

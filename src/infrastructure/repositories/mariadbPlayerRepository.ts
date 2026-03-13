@@ -42,6 +42,14 @@ export class MariaDbPlayerRepository implements PlayerRepository {
     return rows[0] ? mapPlayer(rows[0]) : null;
   }
 
+
+  async updateReputation(id: string, reputation: number): Promise<void> {
+    await this.connection.query(
+      `UPDATE players SET reputation = ? WHERE id = ?`,
+      [reputation, id],
+    );
+  }
+
   async listTopByReputation(limit: number): Promise<Player[]> {
     const rows = await this.connection.query<PlayerRow[]>(
       `SELECT id, discord_user_id, handle, current_era, reputation, created_at

@@ -1,14 +1,41 @@
 import type { Connection } from 'mariadb';
 
+export type TaskProgressRow = {
+  id: string;
+  player_id: string;
+  task_id: string;
+  progress_value: number;
+  completed_at: Date | null;
+};
+
 export class MariaDbPlayerTaskProgressRepository {
   constructor(private readonly connection: Connection) {}
 
-  async incrementProgress(playerId: string, taskId: string, amount: number): Promise<void> {
+  async getOrCreate(playerId: string, taskId: string): Promise<TaskProgressRow> {
     await this.connection.query(
       `INSERT INTO player_task_progress (id, player_id, task_id, progress_value)
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE progress_value = progress_value + VALUES(progress_value)`,
-      [`ptp_${playerId}_${taskId}`, playerId, taskId, amount],
+       VALUES (?, ?, ?, 0)
+       ON DUPLICATE KEY UPDATE id = id`,
+      [`ptp_${playerId}_${taskId}`, playerId, taskId],
+    );
+
+    const rows = await this.connection.query<TaskProgressRow[]>(
+      `SELECT id, player_id, task_id, progress_value, completed_at
+       FROM player_task_progress
+       WHERE player_id = ? AND task_id = ?
+       LIMIT 1`,
+      [playerId, taskId],
+    );
+
+    return rows[0] as TaskProgressRow;
+  }
+
+  async setProgress(playerId: string, taskId: string, progressValue: number, completedAt: Date | null): Promise<void> {
+    await this.connection.query(
+      `UPDATE player_task_progress
+       SET progress_value = ?, completed_at = ?
+       WHERE player_id = ? AND task_id = ?`,
+      [progressValue, completedAt, playerId, taskId],
     );
   }
 }

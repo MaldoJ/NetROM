@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import { GameEngine } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
+import type { Player, PlayerNode, TaskDefinition } from '../../domain/entities.js';
 import type { NodeArchetype } from '../../domain/types.js';
 import { createDbPool } from '../../infrastructure/db/mariadb.js';
 import { MariaDbPlayerRepository } from '../../infrastructure/repositories/mariadbPlayerRepository.js';
@@ -147,10 +148,11 @@ export function createDiscordBotClient(): Client {
       if (content === '.sh scan') {
         const scan = engine.scan(existingPlayer.id);
         await scans.create(scan);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'SCAN', players, nodes, tasks, taskProgress, engine);
         await message.reply(
           `Scan locked: **${scan.discoveryType}** | Threat ${scan.threatLevel}/3\nHint: ${scan.rewardHint}\nExpires: <t:${Math.floor(
             scan.expiresAt.getTime() / 1000,
-          )}:R>`,
+          )}:R>${taskUpdateMessage ? `\n${taskUpdateMessage}` : ''}`,
         );
         return;
       }
@@ -163,7 +165,11 @@ export function createDiscordBotClient(): Client {
         }
 
         const activeScan = engine.connect(scan);
-        await message.reply(`Handshake complete with **${activeScan.discoveryType}**. Run \`.sh claim\` to capture rewards.`);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CONNECT', players, nodes, tasks, taskProgress, engine);
+        await message.reply(
+          `Handshake complete with **${activeScan.discoveryType}**. Run \`.sh claim\` to capture rewards.${taskUpdateMessage ? `
+${taskUpdateMessage}` : ''}`,
+        );
         return;
       }
 
@@ -184,10 +190,7 @@ export function createDiscordBotClient(): Client {
         await nodes.update(upgraded);
         await scans.markResolved(scan.id);
 
-        const activeTaskIds = await tasks.findActiveTaskIds(new Date());
-        for (const taskId of activeTaskIds) {
-          await taskProgress.incrementProgress(existingPlayer.id, taskId, 1);
-        }
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', players, nodes, tasks, taskProgress, engine);
 
         const collectible = engine.rollCollectible(existingPlayer.id);
         if (collectible) {
@@ -197,7 +200,9 @@ export function createDiscordBotClient(): Client {
         await message.reply(
           `Claim complete for **${scan.discoveryType}**. Wallet => credits:${upgraded.wallet.credits} data:${upgraded.wallet.data} cycles:${upgraded.wallet.cycles} parts:${upgraded.wallet.parts}` +
             (collectible ? `
-Collectible found: **${collectible.name}** (${collectible.rarity})` : ''),
+Collectible found: **${collectible.name}** (${collectible.rarity})` : '') +
+            (taskUpdateMessage ? `
+${taskUpdateMessage}` : ''),
         );
         return;
       }
@@ -217,8 +222,9 @@ Collectible found: **${collectible.name}** (${collectible.rarity})` : ''),
 
         const upgraded = engine.upgrade(node, path);
         await nodes.update(upgraded);
+        const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'UPGRADE', players, nodes, tasks, taskProgress, engine);
         await message.reply(
-          `Upgrade applied: **${path}**. BW ${upgraded.bandwidth} | Storage ${upgraded.storage} | CPU ${upgraded.processing}`,
+          `Upgrade applied: **${path}**. BW ${upgraded.bandwidth} | Storage ${upgraded.storage} | CPU ${upgraded.processing}${taskUpdateMessage ? `\n${taskUpdateMessage}` : ''}`,
         );
         return;
       }
@@ -233,6 +239,73 @@ Collectible found: **${collectible.name}** (${collectible.rarity})` : ''),
   });
 
   return client;
+}
+
+
+async function applyTaskActionProgress(
+  playerId: string,
+  action: 'SCAN' | 'CONNECT' | 'CLAIM' | 'UPGRADE',
+  players: MariaDbPlayerRepository,
+  nodes: MariaDbPlayerNodeRepository,
+  tasks: MariaDbTaskRepository,
+  taskProgress: MariaDbPlayerTaskProgressRepository,
+  engine: GameEngine,
+): Promise<string | null> {
+  const activeTasks = await tasks.findActive(new Date());
+  if (activeTasks.length === 0) return null;
+
+  const player = await players.findById(playerId);
+  const node = await nodes.findByPlayerId(playerId);
+  if (!player || !node) return null;
+
+  const completions: TaskDefinition[] = [];
+
+  for (const task of activeTasks) {
+    const stored = await taskProgress.getOrCreate(playerId, task.id);
+    const nextProgress = engine.advanceProgressForAction(
+      {
+        playerId: stored.player_id,
+        taskId: stored.task_id,
+        progressValue: stored.progress_value,
+        completedAt: stored.completed_at ? new Date(stored.completed_at) : null,
+      },
+      task,
+      action,
+      new Date(),
+    );
+
+    const storedCompletedAt = stored.completed_at ? new Date(stored.completed_at) : null;
+    const completionUnchanged =
+      (storedCompletedAt === null && nextProgress.completedAt === null) ||
+      (storedCompletedAt !== null && nextProgress.completedAt !== null && storedCompletedAt.getTime() === nextProgress.completedAt.getTime());
+
+    if (nextProgress.progressValue === stored.progress_value && completionUnchanged) {
+      continue;
+    }
+
+    await taskProgress.setProgress(playerId, task.id, nextProgress.progressValue, nextProgress.completedAt);
+
+    if (!stored.completed_at && nextProgress.completedAt) {
+      completions.push(task);
+    }
+  }
+
+  if (completions.length === 0) return null;
+
+  let nextPlayer: Player = player;
+  let nextNode: PlayerNode = node;
+
+  for (const task of completions) {
+    const rewarded = engine.applyTaskReward(nextNode, nextPlayer, task);
+    nextNode = rewarded.node;
+    nextPlayer = rewarded.player;
+  }
+
+  await nodes.update(nextNode);
+  await players.updateReputation(nextPlayer.id, nextPlayer.reputation);
+
+  const completedKeys = completions.map((task) => task.key).join(', ');
+  return `Task complete: **${completedKeys}**`;
 }
 
 async function handleStart(
