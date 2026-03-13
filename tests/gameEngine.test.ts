@@ -30,6 +30,15 @@ describe('GameEngine', () => {
     expect(scan.threatLevel).toBe(3);
   });
 
+
+  it('resolves faction contracts with deterministic faction and threat-scaled rep', () => {
+    const engine = new GameEngine(new SequenceRandomSource([0.4]));
+
+    const reward = engine.resolveFactionContract(3);
+
+    expect(reward.faction).toBe('NULL_SECTOR');
+    expect(reward.reputationGain).toBe(20);
+  });
   it('rollCollectible returns deterministic collectible when roll succeeds', () => {
     const engine = new GameEngine(new SequenceRandomSource([0.1, 0.0, 0.6, 0.4]));
 

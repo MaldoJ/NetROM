@@ -258,6 +258,21 @@ ${taskUpdateMessage}` : ''}`,
         let claimedNode = engine.claim(node, scan.discoveryType);
         await scans.markResolved(scan.id);
 
+        let factionContractLine = '';
+        if (scan.discoveryType === 'FACTION_CONTRACT') {
+          const contractReward = engine.resolveFactionContract(scan.threatLevel);
+          const standing = await factionReputation.addReputation(
+            existingPlayer.id,
+            contractReward.faction,
+            contractReward.reputationGain,
+          );
+
+          if (standing) {
+            factionContractLine = `
+Faction contract settled: **${factionLabel(standing.faction)}** +${contractReward.reputationGain} rep (total ${standing.reputation}, rank ${standing.rank}).`;
+          }
+        }
+
         const taskUpdateMessage = await applyTaskActionProgress(existingPlayer.id, 'CLAIM', tasks, taskProgress, engine);
 
         const collectible = engine.rollCollectible(existingPlayer.id);
@@ -273,6 +288,7 @@ ${taskUpdateMessage}` : ''}`,
 
         await message.reply(
           `Claim complete for **${scan.discoveryType}**. Wallet => credits:${claimedNode.wallet.credits} data:${claimedNode.wallet.data} cycles:${claimedNode.wallet.cycles} parts:${claimedNode.wallet.parts}` +
+            factionContractLine +
             (collectible ? `
 Collectible found: **${collectible.name}** (${collectible.rarity})${collectibleBonusLine ? ` | Rarity bonus ${collectibleBonusLine}` : ''}` : '') +
             (taskUpdateMessage ? `
