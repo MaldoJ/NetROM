@@ -92,6 +92,7 @@ id (pk), player_id (fk), guild_id, core_channel_id, thread_channel_id, status, c
 ### Private thread
 - `.sh help`: command catalog.
 - `.sh status`: node health + resources + active task.
+- `.sh tasks`: list active daily/weekly objectives with progress + rewards.
 - `.sh scan`: generate one temporary target.
 - `.sh connect`: attempt handshake to active target.
 - `.sh claim`: claim rewards from successful connection.
