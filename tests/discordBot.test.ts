@@ -103,13 +103,13 @@ describe('formatTaskSnapshot', () => {
   it('shows in-progress state with remaining count', () => {
     const line = formatTaskSnapshot(task, 1, null);
 
-    expect(line).toContain('🕓 [DAILY] RUN_SCANS 1/3 (2 left)');
-    expect(line).toContain('Reward 40 credits, 4 parts, 15 rep');
+    expect(line).toContain('🕓 [DAILY] Run scans 1/3 (33%) (2 left)');
+    expect(line).toContain('Run scans payout: 40 credits, 4 parts, 15 rep');
   });
 
   it('shows completed state when completedAt is set', () => {
     const line = formatTaskSnapshot(task, 3, new Date('2026-01-01T12:00:00Z'));
 
-    expect(line).toContain('✅ [DAILY] RUN_SCANS 3/3 (0 left)');
+    expect(line).toContain('✅ [DAILY] Run scans 3/3 (100%) (0 left)');
   });
 });

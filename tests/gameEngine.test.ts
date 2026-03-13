@@ -125,8 +125,8 @@ describe('GameEngine', () => {
     const engine = new GameEngine(new SequenceRandomSource([0.0]));
     const task = engine.createActiveTask('DAILY', now);
 
-    expect(engine.formatTaskProgress(task, 2)).toBe('RUN_SCANS 2/3');
-    expect(engine.formatTaskProgress(task, 8)).toBe('RUN_SCANS 3/3');
+    expect(engine.formatTaskProgress(task, 2)).toBe('Run scans 2/3 (66%)');
+    expect(engine.formatTaskProgress(task, 8)).toBe('Run scans 3/3 (100%)');
     expect(engine.formatTaskReward(task)).toBe('+40 credits, +4 parts, +15 rep');
   });
 });
