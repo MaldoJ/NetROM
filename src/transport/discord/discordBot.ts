@@ -7,6 +7,11 @@ import {
 } from 'discord.js';
 import { GameEngine } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
+import {
+  collectiblePrestigeScore,
+  collectiblePrestigeTier,
+  setForgeProgress,
+} from '../../application/collectibleProgression.js';
 import { formatTaskProgressLabel, taskLabel } from '../../application/taskPresentation.js';
 import type { Player, PlayerNode, TaskDefinition } from '../../domain/entities.js';
 import type { NodeArchetype } from '../../domain/types.js';
@@ -134,7 +139,9 @@ export function createDiscordBotClient(): Client {
             node.name,
             node.archetype,
             collectibleSummary.total,
-            collectibleSummary.rareOrBetter,
+            collectibleSummary.commonTotal,
+            collectibleSummary.uncommonTotal,
+            collectibleSummary.rareTotal,
             collectibleSummary.epicTotal,
             collectibleSummary.categoriesUnlocked,
             collectibleSummary.completedSets,
@@ -506,16 +513,28 @@ export function formatProfileResponse(
   nodeName: string,
   nodeArchetype: string,
   totalCollectibles: number,
+  commonCollectibles: number,
+  uncommonCollectibles: number,
   rareCollectibles: number,
   epicCollectibles: number,
   categoriesUnlocked: number,
   completedSets: number,
 ): string {
+  const prestigeScore = collectiblePrestigeScore({
+    COMMON: commonCollectibles,
+    UNCOMMON: uncommonCollectibles,
+    RARE: rareCollectibles,
+    EPIC: epicCollectibles,
+  });
+  const prestigeTier = collectiblePrestigeTier(completedSets);
+
   return (
     `Handle: **${handle}** | Era: **${era}** | Rep: **${reputation}**\n` +
     `Node: **${nodeName}** (${nodeArchetype})\n` +
-    `Collectibles: **${totalCollectibles}** total | **${rareCollectibles}** rare+ | **${epicCollectibles}** epic\n` +
-    `Sets: **${completedSets}** complete | Categories unlocked: **${categoriesUnlocked}/3**`
+    `Collectibles: **${totalCollectibles}** total | **${rareCollectibles + epicCollectibles}** rare+ | **${epicCollectibles}** epic\n` +
+    `Rarity spread: C **${commonCollectibles}** | U **${uncommonCollectibles}** | R **${rareCollectibles}** | E **${epicCollectibles}**\n` +
+    `Sets: **${completedSets}** complete | Categories unlocked: **${categoriesUnlocked}/3**\n` +
+    `Forge rank: **${prestigeTier}** | Prestige score: **${prestigeScore}**`
   );
 }
 
@@ -529,14 +548,13 @@ export function formatCollectionResponse(
   categoriesUnlocked: number,
   recentCollectibles: { name: string; rarity: string; category: string }[],
 ): string {
-  const nextSetTarget = completedSets + 1;
-  const missingForNextSet = [
-    Math.max(0, nextSetTarget - ansiTotal),
-    Math.max(0, nextSetTarget - archiveTotal),
-    Math.max(0, nextSetTarget - malwareTotal),
-  ];
-  const fragments = missingForNextSet.filter((missing) => missing === 0).length;
-  const missingPieces = missingForNextSet.reduce((sum, missing) => sum + missing, 0);
+  const { fragments, missingPieces, nextSetTarget } = setForgeProgress(
+    ansiTotal,
+    archiveTotal,
+    malwareTotal,
+    completedSets,
+  );
+  const prestigeTier = collectiblePrestigeTier(completedSets);
 
   const recentLine =
     recentCollectibles.length === 0
@@ -551,6 +569,7 @@ Complete sets forged: **${completedSets}**
 Category totals: ANSI **${ansiTotal}** | ARCHIVE **${archiveTotal}** | MALWARE **${malwareTotal}**
 Set forge progress: **${fragments}/3** fragments toward set #${nextSetTarget} | Missing pieces: **${missingPieces}**
 Category unlocks: **${categoriesUnlocked}/3**
+Forge rank: **${prestigeTier}**
 ${recentLine}`;
 }
 
