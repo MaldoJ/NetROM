@@ -56,9 +56,21 @@ describe('GameEngine', () => {
     expect(task.scope).toBe('DAILY');
     expect(task.key).toBe('RUN_SCANS');
     expect(task.objectiveValue).toBe(3);
+    expect(task.id).toBe('daily_2026-03-10');
+    expect(task.activeFrom.toISOString()).toBe('2026-03-10T00:00:00.000Z');
     expect(task.activeTo.toISOString()).toBe('2026-03-10T23:59:59.999Z');
   });
 
+  it('creates weekly tasks anchored to UTC week boundaries', () => {
+    const now = new Date('2026-03-12T09:15:00.000Z');
+    const engine = new GameEngine(new SequenceRandomSource([0.0]));
+
+    const task = engine.createActiveTask('WEEKLY', now);
+
+    expect(task.id).toBe('weekly_2026-03-09');
+    expect(task.activeFrom.toISOString()).toBe('2026-03-09T00:00:00.000Z');
+    expect(task.activeTo.toISOString()).toBe('2026-03-15T23:59:59.999Z');
+  });
 
   it('advances only matching task action progress', () => {
     const now = new Date('2026-03-10T09:15:00.000Z');

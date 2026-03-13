@@ -150,6 +150,7 @@ export function createDiscordBotClient(): Client {
       }
 
       if (content === '.sh tasks') {
+        await ensureActiveTasks(tasks, engine);
         const activeTasks = await tasks.findActive(new Date());
         if (activeTasks.length === 0) {
           await message.reply('No active objectives available right now. Check back soon.');
@@ -272,6 +273,7 @@ async function applyTaskActionProgress(
   taskProgress: MariaDbPlayerTaskProgressRepository,
   engine: GameEngine,
 ): Promise<string | null> {
+  await ensureActiveTasks(tasks, engine);
   const activeTasks = await tasks.findActive(new Date());
   if (activeTasks.length === 0) return null;
 
@@ -335,6 +337,19 @@ async function applyTaskActionProgress(
 
   return lines.join('\n');
 }
+
+async function ensureActiveTasks(tasks: MariaDbTaskRepository, engine: GameEngine, now: Date = new Date()): Promise<void> {
+  const daily = await tasks.findLatestActiveByScope('DAILY', now);
+  if (!daily) {
+    await tasks.create(engine.createActiveTask('DAILY', now));
+  }
+
+  const weekly = await tasks.findLatestActiveByScope('WEEKLY', now);
+  if (!weekly) {
+    await tasks.create(engine.createActiveTask('WEEKLY', now));
+  }
+}
+
 
 async function handleStart(
   message: Message,
