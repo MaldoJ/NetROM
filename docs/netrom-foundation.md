@@ -125,8 +125,8 @@ Implemented now:
 - TypeScript project/test scaffold.
 
 Immediate next implementation steps:
-1. Add MariaDB schema migrations + repositories.
-2. Add Discord transport with thread orchestration.
-3. Add command handlers wired to use-cases.
-4. Add deterministic RNG service for testable gameplay outcomes.
-5. Add integration tests for scan->connect->claim loop.
+1. Expand objective depth beyond basic hooks (task generation, rewards, completion UX).
+2. Add richer collectible systems (set tracking, rarity effects, profile surfacing).
+3. Harden session lifecycle (thread archival handling, recovery, and re-provisioning).
+4. Advance progression tuning (reputation gain paths, era-gate balancing, upgrade economy).
+5. Start Phase 2 faction progression once Phase 1 acceptance criteria are locked.

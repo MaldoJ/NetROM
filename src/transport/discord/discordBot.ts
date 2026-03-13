@@ -12,6 +12,10 @@ import { createDbPool } from '../../infrastructure/db/mariadb.js';
 import { MariaDbPlayerRepository } from '../../infrastructure/repositories/mariadbPlayerRepository.js';
 import { MariaDbPlayerNodeRepository } from '../../infrastructure/repositories/mariadbPlayerNodeRepository.js';
 import { MariaDbScanResultRepository } from '../../infrastructure/repositories/mariadbScanResultRepository.js';
+import { MariaDbCollectibleRepository } from '../../infrastructure/repositories/mariadbCollectibleRepository.js';
+import { MariaDbPlayerSessionRepository } from '../../infrastructure/repositories/mariadbPlayerSessionRepository.js';
+import { MariaDbTaskRepository } from '../../infrastructure/repositories/mariadbTaskRepository.js';
+import { MariaDbPlayerTaskProgressRepository } from '../../infrastructure/repositories/mariadbPlayerTaskProgressRepository.js';
 
 const HELP_TEXT = [
   '```',
@@ -44,6 +48,10 @@ export function createDiscordBotClient(): Client {
     const players = new MariaDbPlayerRepository(connection);
     const nodes = new MariaDbPlayerNodeRepository(connection);
     const scans = new MariaDbScanResultRepository(connection);
+    const collectibles = new MariaDbCollectibleRepository(connection);
+    const sessions = new MariaDbPlayerSessionRepository(connection);
+    const tasks = new MariaDbTaskRepository(connection);
+    const taskProgress = new MariaDbPlayerTaskProgressRepository(connection);
 
     try {
       if (content === '.sh help') {
@@ -52,7 +60,7 @@ export function createDiscordBotClient(): Client {
       }
 
       if (content.startsWith('.sh start')) {
-        await handleStart(message, content, players, nodes, engine);
+        await handleStart(message, content, players, nodes, sessions, engine);
         return;
       }
 
@@ -60,6 +68,24 @@ export function createDiscordBotClient(): Client {
       if (!existingPlayer) {
         await message.reply('Run `.sh start` first to initialize your node.');
         return;
+      }
+
+      const threadOnlyCommands = new Set(['.sh help', '.sh status', '.sh scan', '.sh connect', '.sh claim']);
+      if (content.startsWith('.sh upgrade')) {
+        threadOnlyCommands.add('.sh upgrade');
+      }
+
+      if (threadOnlyCommands.has(content.split(' ').slice(0, 2).join(' '))) {
+        const activeSession = await sessions.findActiveByPlayerId(existingPlayer.id);
+        if (!activeSession) {
+          await message.reply('No active private session. Run `.sh start` in the core channel.');
+          return;
+        }
+
+        if (message.channel.type !== ChannelType.PrivateThread || message.channel.id !== activeSession.threadChannelId) {
+          await message.reply('Run this command in your NETROM private thread.');
+          return;
+        }
       }
 
       if (content === '.sh profile') {
@@ -143,8 +169,20 @@ export function createDiscordBotClient(): Client {
         await nodes.update(upgraded);
         await scans.markResolved(scan.id);
 
+        const activeTaskIds = await tasks.findActiveTaskIds(new Date());
+        for (const taskId of activeTaskIds) {
+          await taskProgress.incrementProgress(existingPlayer.id, taskId, 1);
+        }
+
+        const collectible = engine.rollCollectible(existingPlayer.id);
+        if (collectible) {
+          await collectibles.create(collectible);
+        }
+
         await message.reply(
-          `Claim complete for **${scan.discoveryType}**. Wallet => credits:${upgraded.wallet.credits} data:${upgraded.wallet.data} cycles:${upgraded.wallet.cycles} parts:${upgraded.wallet.parts}`,
+          `Claim complete for **${scan.discoveryType}**. Wallet => credits:${upgraded.wallet.credits} data:${upgraded.wallet.data} cycles:${upgraded.wallet.cycles} parts:${upgraded.wallet.parts}` +
+            (collectible ? `
+Collectible found: **${collectible.name}** (${collectible.rarity})` : ''),
         );
         return;
       }
@@ -187,6 +225,7 @@ async function handleStart(
   content: string,
   players: MariaDbPlayerRepository,
   nodes: MariaDbPlayerNodeRepository,
+  sessions: MariaDbPlayerSessionRepository,
   engine: GameEngine,
 ): Promise<void> {
   const existingPlayer = await players.findByDiscordUserId(message.author.id);
@@ -208,12 +247,21 @@ async function handleStart(
   if (message.channel.type !== ChannelType.GuildText) return;
 
   const channel = message.channel as TextChannel;
-  await channel.threads.create({
+  const thread = await channel.threads.create({
     name: `netrom-${onboarded.player.handle}`,
     autoArchiveDuration: 1440,
     reason: 'NETROM private command session',
     type: ChannelType.PrivateThread,
     invitable: false,
+  });
+
+  await sessions.create({
+    id: `ses_${onboarded.player.id}`,
+    playerId: onboarded.player.id,
+    guildId: message.guildId ?? 'unknown',
+    coreChannelId: channel.id,
+    threadChannelId: thread.id,
+    status: 'ACTIVE',
   });
 }
 
