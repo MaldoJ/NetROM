@@ -84,7 +84,7 @@ export function createDiscordBotClient(): Client {
       if (threadOnlyCommands.has(content.split(' ').slice(0, 2).join(' '))) {
         const activeSession = await sessions.findActiveByPlayerId(existingPlayer.id);
         if (!activeSession) {
-          await message.reply('No active private session. Run `.sh start` in the core channel.');
+          await message.reply('No active private session. Run `.sh resume` in the core channel to recover one.');
           return;
         }
 
@@ -245,7 +245,7 @@ async function handleStart(
 ): Promise<void> {
   const existingPlayer = await players.findByDiscordUserId(message.author.id);
   if (existingPlayer) {
-    await message.reply('Profile already exists. Use `.sh status` in your thread.');
+    await message.reply('Profile already exists. Use `.sh status` in your thread, or `.sh resume` in core if your thread is missing.');
     return;
   }
 
