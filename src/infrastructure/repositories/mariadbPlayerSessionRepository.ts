@@ -31,6 +31,15 @@ export class MariaDbPlayerSessionRepository {
     );
   }
 
+  async archiveActiveByPlayerId(playerId: string): Promise<void> {
+    await this.connection.query(
+      `UPDATE player_sessions
+       SET status = 'ARCHIVED'
+       WHERE player_id = ? AND status = 'ACTIVE'`,
+      [playerId],
+    );
+  }
+
   async findActiveByPlayerId(playerId: string): Promise<PlayerSession | null> {
     const rows = await this.connection.query<PlayerSessionRow[]>(
       `SELECT id, player_id, guild_id, core_channel_id, thread_channel_id, status, created_at
