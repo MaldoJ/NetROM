@@ -8,6 +8,7 @@ import type {
   TaskDefinition,
 } from '../domain/entities.js';
 import { MathRandomSource, type RandomSource } from './random.js';
+import { formatTaskProgressLabel } from './taskPresentation.js';
 
 const BASE_RESOURCES = { credits: 100, data: 25, cycles: 5, parts: 10 };
 const DAILY_TASKS: Omit<TaskDefinition, 'id' | 'activeFrom' | 'activeTo'>[] = [
@@ -175,8 +176,7 @@ export class GameEngine {
   }
 
   formatTaskProgress(task: TaskDefinition, progressValue: number): string {
-    const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
-    return `${task.key} ${clamped}/${task.objectiveValue}`;
+    return formatTaskProgressLabel(task, progressValue);
   }
 
   formatTaskReward(task: TaskDefinition): string {

@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import { GameEngine } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
+import { formatTaskProgressLabel, taskLabel } from '../../application/taskPresentation.js';
 import type { Player, PlayerNode, TaskDefinition } from '../../domain/entities.js';
 import type { NodeArchetype } from '../../domain/types.js';
 import { createDbPool } from '../../infrastructure/db/mariadb.js';
@@ -557,5 +558,6 @@ export function formatTaskSnapshot(task: TaskDefinition, progressValue: number, 
   const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
   const remaining = Math.max(0, task.objectiveValue - clamped);
   const state = completedAt ? '✅' : '🕓';
-  return `${state} [${task.scope}] ${task.key} ${clamped}/${task.objectiveValue} (${remaining} left) — Reward ${task.reward.credits} credits, ${task.reward.parts} parts, ${task.reward.reputation} rep`;
+  const progressLabel = formatTaskProgressLabel(task, clamped);
+  return `${state} [${task.scope}] ${progressLabel} (${remaining} left) — ${taskLabel(task.key)} payout: ${task.reward.credits} credits, ${task.reward.parts} parts, ${task.reward.reputation} rep`;
 }
