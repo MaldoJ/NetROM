@@ -22,6 +22,7 @@ const HELP_TEXT = [
   '.sh start [handle] [node-name] [archetype]',
   '.sh profile',
   '.sh leaderboard',
+  '.sh resume',
   '.sh status',
   '.sh scan',
   '.sh connect',
@@ -61,6 +62,11 @@ export function createDiscordBotClient(): Client {
 
       if (content.startsWith('.sh start')) {
         await handleStart(message, content, players, nodes, sessions, engine);
+        return;
+      }
+
+      if (content === '.sh resume') {
+        await handleResume(message, players, sessions);
         return;
       }
 
@@ -272,6 +278,55 @@ async function handleStart(
     threadChannelId: thread.id,
     status: 'ACTIVE',
   });
+}
+
+async function handleResume(
+  message: Message,
+  players: MariaDbPlayerRepository,
+  sessions: MariaDbPlayerSessionRepository,
+): Promise<void> {
+  if (message.channel.type !== ChannelType.GuildText) {
+    await message.reply('Run `.sh resume` in the NETROM core channel.');
+    return;
+  }
+
+  const existingPlayer = await players.findByDiscordUserId(message.author.id);
+  if (!existingPlayer) {
+    await message.reply('Run `.sh start` first to initialize your node.');
+    return;
+  }
+
+  const channel = message.channel as TextChannel;
+  const activeSession = await sessions.findActiveByPlayerId(existingPlayer.id);
+
+  if (activeSession) {
+    const existingThread = await channel.threads.fetch(activeSession.threadChannelId).catch(() => null);
+    if (existingThread) {
+      await message.reply(`Session already active in <#${activeSession.threadChannelId}>.`);
+      return;
+    }
+
+    await sessions.archiveActiveByPlayerId(existingPlayer.id);
+  }
+
+  const thread = await channel.threads.create({
+    name: `netrom-${existingPlayer.handle}`,
+    autoArchiveDuration: 1440,
+    reason: 'NETROM session recovery',
+    type: ChannelType.PrivateThread,
+    invitable: false,
+  });
+
+  await sessions.create({
+    id: `ses_${existingPlayer.id}_${Date.now()}`,
+    playerId: existingPlayer.id,
+    guildId: message.guildId ?? 'unknown',
+    coreChannelId: channel.id,
+    threadChannelId: thread.id,
+    status: 'ACTIVE',
+  });
+
+  await message.reply(`Recovered session thread: <#${thread.id}>`);
 }
 
 export function parseStartCommand(content: string, fallbackHandle: string): { handle: string; nodeName: string; archetype: NodeArchetype } {
