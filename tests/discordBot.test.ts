@@ -22,6 +22,16 @@ describe('parseStartCommand', () => {
       archetype: 'MARKET_NODE',
     });
   });
+
+  it('handles extra whitespace between args', () => {
+    const parsed = parseStartCommand('.sh   start   neon   relay   market', 'SysOp');
+
+    expect(parsed).toEqual({
+      handle: 'neon',
+      nodeName: 'relay',
+      archetype: 'MARKET_NODE',
+    });
+  });
 });
 
 describe('parseUpgradePath', () => {
@@ -33,6 +43,8 @@ describe('parseUpgradePath', () => {
     expect(parseUpgradePath('.sh upgrade modem')).toBe('MODEM');
     expect(parseUpgradePath('.sh upgrade storage')).toBe('STORAGE');
     expect(parseUpgradePath('.sh upgrade cpu')).toBe('CPU');
+    expect(parseUpgradePath('.sh upgrade MODEM')).toBe('MODEM');
+    expect(parseUpgradePath('.sh   upgrade   storage')).toBe('STORAGE');
   });
 });
 
