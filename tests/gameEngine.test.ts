@@ -52,6 +52,36 @@ describe('GameEngine', () => {
     expect(rankThree.available).toHaveLength(3);
     expect(rankThree.locked).toHaveLength(0);
   });
+
+  it('lists faction shop stock split by available and locked rank bands', () => {
+    const engine = new GameEngine();
+
+    const rankOne = engine.listFactionShopItems('HELIX_SYNDICATE', 1);
+    expect(rankOne.available).toHaveLength(1);
+    expect(rankOne.available[0]?.name).toBe('Helix Modem Amplifier I');
+    expect(rankOne.locked).toHaveLength(2);
+
+    const rankThree = engine.listFactionShopItems('HELIX_SYNDICATE', 3);
+    expect(rankThree.available).toHaveLength(3);
+    expect(rankThree.locked).toHaveLength(0);
+  });
+
+  it('caps contract tier availability by era progression', () => {
+    const engine = new GameEngine();
+
+    const dialUp = engine.factionContractTierFor(3, 'DIAL_UP');
+    expect(dialUp.availableTier).toBe('Tier I');
+    expect(dialUp.eraGate).toEqual({ era: 'DIAL_UP', maximumTier: 'Tier I' });
+
+    const bulletin = engine.factionContractTierFor(3, 'BULLETIN_RELAY');
+    expect(bulletin.availableTier).toBe('Tier II');
+    expect(bulletin.eraGate).toEqual({ era: 'BULLETIN_RELAY', maximumTier: 'Tier II' });
+
+    const earlyInternet = engine.factionContractTierFor(3, 'EARLY_INTERNET');
+    expect(earlyInternet.availableTier).toBe('Tier III');
+    expect(earlyInternet.eraGate).toBeNull();
+  });
+
   it('rollCollectible returns deterministic collectible when roll succeeds', () => {
     const engine = new GameEngine(new SequenceRandomSource([0.1, 0.0, 0.6, 0.4]));
 

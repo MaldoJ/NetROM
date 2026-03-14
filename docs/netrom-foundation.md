@@ -146,4 +146,5 @@ With the criteria above locked and met, the project is ready to enter Phase 2 (p
 - Added `.sh factions` command surface to view faction standings in-game.
 - Added `.sh factions tasks` board preview plus `.sh factions shop` and `.sh factions contracts` views to expose rank-gated progression surfaces.
 - Claim loop now awards faction contract reputation and applies rank progression in persistent standings.
-- Next implementation targets: unlockable shop inventory and era transition contract gates.
+- Added unlockable faction shop inventory previews with rank-gated stock lines.
+- Added era-gated faction contract tier previews so higher contract tiers unlock with both rank and era progression.

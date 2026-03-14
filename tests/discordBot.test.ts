@@ -192,17 +192,21 @@ describe('formatFactionShopResponse', () => {
 
 describe('formatFactionContractsResponse', () => {
   it('shows locked board state when no factions are initialized', () => {
-    const message = formatFactionContractsResponse([]);
+    const message = formatFactionContractsResponse([], 'DIAL_UP', new GameEngine());
 
     expect(message).toContain('No faction standing found yet');
   });
 
   it('renders available contract tier by rank', () => {
-    const message = formatFactionContractsResponse([
-      { faction: 'NULL_SECTOR', reputation: 15, rank: 1 },
-      { faction: 'HELIX_SYNDICATE', reputation: 220, rank: 3 },
-      { faction: 'LATTICE_COLLECTIVE', reputation: 145, rank: 2 },
-    ]);
+    const message = formatFactionContractsResponse(
+      [
+        { faction: 'NULL_SECTOR', reputation: 15, rank: 1 },
+        { faction: 'HELIX_SYNDICATE', reputation: 220, rank: 3 },
+        { faction: 'LATTICE_COLLECTIVE', reputation: 145, rank: 2 },
+      ],
+      'EARLY_INTERNET',
+      new GameEngine(),
+    );
 
     expect(message).toContain('Faction contract board');
     expect(message).toContain('**Helix Syndicate** | Available Tier III contracts | Next unlock: MAX');
@@ -212,12 +216,27 @@ describe('formatFactionContractsResponse', () => {
 
 
   it('applies deterministic tie-break ordering for equal reputation', () => {
-    const message = formatFactionContractsResponse([
-      { faction: 'NULL_SECTOR', reputation: 120, rank: 2 },
-      { faction: 'HELIX_SYNDICATE', reputation: 120, rank: 2 },
-    ]);
+    const message = formatFactionContractsResponse(
+      [
+        { faction: 'NULL_SECTOR', reputation: 120, rank: 2 },
+        { faction: 'HELIX_SYNDICATE', reputation: 120, rank: 2 },
+      ],
+      'EARLY_INTERNET',
+      new GameEngine(),
+    );
 
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
+  });
+
+  it('applies era gating to contract tier availability', () => {
+    const message = formatFactionContractsResponse(
+      [{ faction: 'HELIX_SYNDICATE', reputation: 320, rank: 4 }],
+      'BULLETIN_RELAY',
+      new GameEngine(),
+    );
+
+    expect(message).toContain('Available Tier II contracts');
+    expect(message).toContain('Era gate: BULLETIN_RELAY max Tier II');
   });
 });
 
