@@ -6,7 +6,7 @@ import {
   type ThreadChannel,
   type TextChannel,
 } from 'discord.js';
-import { GameEngine } from '../../application/gameEngine.js';
+import { GameEngine, type FactionTaskDefinition } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
 import {
   collectiblePrestigeScore,
@@ -33,6 +33,7 @@ const HELP_TEXT = [
   '.sh collection',
   '.sh leaderboard',
   '.sh factions',
+  '.sh factions tasks',
   '.sh factions shop',
   '.sh factions contracts',
   '.sh resume',
@@ -163,6 +164,13 @@ export function createDiscordBotClient(): Client {
         await factionReputation.ensurePlayerRows(existingPlayer.id);
         const standings = await factionReputation.listByPlayerId(existingPlayer.id);
         await message.reply(formatFactionResponse(standings));
+        return;
+      }
+
+      if (content === '.sh factions tasks') {
+        await factionReputation.ensurePlayerRows(existingPlayer.id);
+        const standings = await factionReputation.listByPlayerId(existingPlayer.id);
+        await message.reply(formatFactionTasksResponse(standings, engine));
         return;
       }
 
@@ -568,6 +576,30 @@ function sortFactionStandings(standings: FactionStanding[]): FactionStanding[] {
   return standings
     .slice()
     .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction));
+}
+
+function formatFactionTaskLine(task: FactionTaskDefinition): string {
+  return `  • ${task.title} (R${task.requiredRank}) — ${task.reward.credits}c/${task.reward.parts}p/+${task.reward.factionReputation} rep`;
+}
+
+export function formatFactionTasksResponse(standings: FactionStanding[], engine: GameEngine): string {
+  if (standings.length === 0) {
+    return 'No faction standing found yet. Complete contracts to unlock faction task lines.';
+  }
+
+  const lines = sortFactionStandings(standings).flatMap((entry) => {
+    const { available, locked } = engine.listFactionTasks(entry.faction, entry.rank);
+    const header = `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Available tasks: ${available.length}`;
+    const availableLines =
+      available.length === 0
+        ? ['  • No tasks available yet.']
+        : available.map((task) => formatFactionTaskLine(task));
+    const nextLocked = locked[0] ? `  • Next unlock: Rank ${locked[0].requiredRank} — ${locked[0].title}` : '  • Next unlock: MAX';
+
+    return [header, ...availableLines, nextLocked];
+  });
+
+  return `Faction task board\n${lines.join('\n')}`;
 }
 
 export function formatFactionShopResponse(standings: FactionStanding[]): string {

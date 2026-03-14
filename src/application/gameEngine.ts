@@ -28,6 +28,101 @@ const ACTIVE_TASK_TARGETS: Record<TaskScope, number> = {
 
 const FACTION_ORDER: Faction[] = ['HELIX_SYNDICATE', 'NULL_SECTOR', 'LATTICE_COLLECTIVE'];
 
+
+export type FactionTaskDefinition = {
+  id: string;
+  faction: Faction;
+  title: string;
+  objective: string;
+  requiredRank: number;
+  reward: {
+    credits: number;
+    parts: number;
+    factionReputation: number;
+  };
+};
+
+const FACTION_TASK_BOARD: Record<Faction, FactionTaskDefinition[]> = {
+  HELIX_SYNDICATE: [
+    {
+      id: 'helix_t1_signal_scrape',
+      faction: 'HELIX_SYNDICATE',
+      title: 'Signal Scrape Sweep',
+      objective: 'Run 3 relay sweeps through Helix-controlled sectors.',
+      requiredRank: 1,
+      reward: { credits: 90, parts: 4, factionReputation: 14 },
+    },
+    {
+      id: 'helix_t2_backbone_patch',
+      faction: 'HELIX_SYNDICATE',
+      title: 'Backbone Patch Relay',
+      objective: 'Complete 5 secure uplink patches on contested backbone nodes.',
+      requiredRank: 2,
+      reward: { credits: 150, parts: 7, factionReputation: 22 },
+    },
+    {
+      id: 'helix_t3_core_overwatch',
+      faction: 'HELIX_SYNDICATE',
+      title: 'Core Overwatch Rotation',
+      objective: 'Stabilize 8 high-threat Helix contract points without failure.',
+      requiredRank: 3,
+      reward: { credits: 220, parts: 12, factionReputation: 30 },
+    },
+  ],
+  NULL_SECTOR: [
+    {
+      id: 'null_t1_cache_harvest',
+      faction: 'NULL_SECTOR',
+      title: 'Cache Harvest',
+      objective: 'Extract 3 abandoned cache fragments from Null Sector grids.',
+      requiredRank: 1,
+      reward: { credits: 95, parts: 3, factionReputation: 13 },
+    },
+    {
+      id: 'null_t2_ghost_route',
+      faction: 'NULL_SECTOR',
+      title: 'Ghost Route Injection',
+      objective: 'Deploy 4 stealth relays across blacklisted transit routes.',
+      requiredRank: 2,
+      reward: { credits: 155, parts: 6, factionReputation: 21 },
+    },
+    {
+      id: 'null_t3_void_sync',
+      faction: 'NULL_SECTOR',
+      title: 'Void Sync Protocol',
+      objective: 'Coordinate 7 synchronized breaches on hardened vault clusters.',
+      requiredRank: 3,
+      reward: { credits: 230, parts: 11, factionReputation: 29 },
+    },
+  ],
+  LATTICE_COLLECTIVE: [
+    {
+      id: 'lattice_t1_mesh_maintenance',
+      faction: 'LATTICE_COLLECTIVE',
+      title: 'Mesh Maintenance',
+      objective: 'Repair 3 degraded lattice mesh anchors in civic sectors.',
+      requiredRank: 1,
+      reward: { credits: 88, parts: 5, factionReputation: 15 },
+    },
+    {
+      id: 'lattice_t2_beacon_alignment',
+      faction: 'LATTICE_COLLECTIVE',
+      title: 'Beacon Alignment',
+      objective: 'Realign 5 data beacons to restore collective routing accuracy.',
+      requiredRank: 2,
+      reward: { credits: 148, parts: 8, factionReputation: 23 },
+    },
+    {
+      id: 'lattice_t3_consensus_uplink',
+      faction: 'LATTICE_COLLECTIVE',
+      title: 'Consensus Uplink',
+      objective: 'Bring 8 encrypted civic nodes online under consensus timing.',
+      requiredRank: 3,
+      reward: { credits: 215, parts: 13, factionReputation: 31 },
+    },
+  ],
+};
+
 export class GameEngine {
   constructor(private readonly random: RandomSource = new MathRandomSource()) {}
 
@@ -112,6 +207,15 @@ export class GameEngine {
       faction,
       reputationGain: 8 + normalizedThreat * 4,
     };
+  }
+
+
+  listFactionTasks(faction: Faction, rank: number): { available: FactionTaskDefinition[]; locked: FactionTaskDefinition[] } {
+    const board = FACTION_TASK_BOARD[faction] ?? [];
+    const available = board.filter((task) => task.requiredRank <= rank);
+    const locked = board.filter((task) => task.requiredRank > rank);
+
+    return { available, locked };
   }
 
   createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {

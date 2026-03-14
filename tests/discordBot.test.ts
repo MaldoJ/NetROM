@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatCollectionResponse, formatFactionContractsResponse, formatFactionResponse, formatFactionShopResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { formatCollectionResponse, formatFactionContractsResponse, formatFactionResponse, formatFactionShopResponse, formatFactionTasksResponse, formatProfileResponse, formatTaskSnapshot, parseStartCommand, parseUpgradePath } from '../src/transport/discord/discordBot.js';
+import { GameEngine } from '../src/application/gameEngine.js';
 import type { TaskDefinition } from '../src/domain/entities.js';
 
 describe('parseStartCommand', () => {
@@ -215,5 +216,31 @@ describe('formatFactionContractsResponse', () => {
     ]);
 
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
+  });
+});
+
+
+describe('formatFactionTasksResponse', () => {
+  it('shows locked task board state when no factions are initialized', () => {
+    const message = formatFactionTasksResponse([], new GameEngine());
+
+    expect(message).toContain('No faction standing found yet');
+  });
+
+  it('renders available faction tasks and next unlock details', () => {
+    const message = formatFactionTasksResponse(
+      [
+        { faction: 'HELIX_SYNDICATE', reputation: 140, rank: 2 },
+        { faction: 'NULL_SECTOR', reputation: 40, rank: 1 },
+      ],
+      new GameEngine(),
+    );
+
+    expect(message).toContain('Faction task board');
+    expect(message).toContain('**Helix Syndicate** | Rank 2 | Available tasks: 2');
+    expect(message).toContain('Backbone Patch Relay (R2)');
+    expect(message).toContain('Next unlock: Rank 3 — Core Overwatch Rotation');
+    expect(message).toContain('**Null Sector** | Rank 1 | Available tasks: 1');
+    expect(message).toContain('Next unlock: Rank 2 — Ghost Route Injection');
   });
 });
