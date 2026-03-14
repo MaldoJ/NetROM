@@ -193,6 +193,15 @@ describe('formatFactionShopResponse', () => {
 
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
+
+  it('shows max unlock copy when all shop items are available', () => {
+    const message = formatFactionShopResponse([
+      { faction: 'HELIX_SYNDICATE', reputation: 320, rank: 3 },
+    ], new GameEngine());
+
+    expect(message).toContain('**Helix Syndicate** | Rank 3 | Available stock: 3');
+    expect(message).toContain('Next stock unlock: MAX');
+  });
 });
 
 
@@ -244,6 +253,17 @@ describe('formatFactionContractsResponse', () => {
     expect(message).toContain('Available Tier II contracts');
     expect(message).toContain('Era gate: BULLETIN_RELAY max Tier II');
   });
+
+  it('shows max unlock copy when rank cap and era allow top contract tier', () => {
+    const message = formatFactionContractsResponse(
+      [{ faction: 'HELIX_SYNDICATE', reputation: 420, rank: 4 }],
+      'MODERN_GRID',
+      new GameEngine(),
+    );
+
+    expect(message).toContain('Available Tier III contracts');
+    expect(message).toContain('Next unlock: MAX');
+  });
 });
 
 
@@ -269,5 +289,15 @@ describe('formatFactionTasksResponse', () => {
     expect(message).toContain('Next unlock: Rank 3 — Core Overwatch Rotation');
     expect(message).toContain('**Null Sector** | Rank 1 | Available tasks: 1');
     expect(message).toContain('Next unlock: Rank 2 — Ghost Route Injection');
+  });
+
+  it('shows max unlock copy when all faction tasks are available', () => {
+    const message = formatFactionTasksResponse(
+      [{ faction: 'HELIX_SYNDICATE', reputation: 305, rank: 3 }],
+      new GameEngine(),
+    );
+
+    expect(message).toContain('**Helix Syndicate** | Rank 3 | Available tasks: 3');
+    expect(message).toContain('Next unlock: MAX');
   });
 });
