@@ -300,4 +300,16 @@ describe('formatFactionTasksResponse', () => {
     expect(message).toContain('**Helix Syndicate** | Rank 3 | Available tasks: 3');
     expect(message).toContain('Next unlock: MAX');
   });
+
+  it('applies deterministic tie-break ordering for equal reputation', () => {
+    const message = formatFactionTasksResponse(
+      [
+        { faction: 'NULL_SECTOR', reputation: 120, rank: 2 },
+        { faction: 'HELIX_SYNDICATE', reputation: 120, rank: 2 },
+      ],
+      new GameEngine(),
+    );
+
+    expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
+  });
 });
