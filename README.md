@@ -16,6 +16,7 @@ This repository now includes the Phase 1 MVP foundation plus the current Phase 2
 - Session recovery workflow (`.sh resume`)
 - Faction standing + progression surfaces (`.sh factions`, `.sh factions tasks`, `.sh factions shop`, `.sh factions contracts`)
 - Contract-side faction reputation payouts from successful claim loops
+- Rank-gated faction shop inventory previews and era-gated faction contract tier previews
 - Design docs for architecture, command UX, and phased roadmap
 
 See `docs/netrom-foundation.md` for complete design + implementation details.

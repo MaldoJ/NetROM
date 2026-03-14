@@ -6,7 +6,7 @@ import {
   type ThreadChannel,
   type TextChannel,
 } from 'discord.js';
-import { GameEngine, type FactionTaskDefinition } from '../../application/gameEngine.js';
+import { GameEngine, type FactionShopItem, type FactionTaskDefinition } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
 import {
   collectiblePrestigeScore,
@@ -184,7 +184,7 @@ export function createDiscordBotClient(): Client {
       if (content === '.sh factions contracts') {
         await factionReputation.ensurePlayerRows(existingPlayer.id);
         const standings = await factionReputation.listByPlayerId(existingPlayer.id);
-        await message.reply(formatFactionContractsResponse(standings));
+        await message.reply(formatFactionContractsResponse(standings, existingPlayer.currentEra, engine));
         return;
       }
 
@@ -602,26 +602,6 @@ export function formatFactionTasksResponse(standings: FactionStanding[], engine:
   return `Faction task board\n${lines.join('\n')}`;
 }
 
-export function formatFactionShopResponse(standings: FactionStanding[]): string {
-  if (standings.length === 0) {
-    return 'No faction standing found yet. Complete contracts to unlock faction task lines.';
-  }
-
-  const lines = sortFactionStandings(standings).flatMap((entry) => {
-    const { available, locked } = engine.listFactionTasks(entry.faction, entry.rank);
-    const header = `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Available tasks: ${available.length}`;
-    const availableLines =
-      available.length === 0
-        ? ['  • No tasks available yet.']
-        : available.map((task) => formatFactionTaskLine(task));
-    const nextLocked = locked[0] ? `  • Next unlock: Rank ${locked[0].requiredRank} — ${locked[0].title}` : '  • Next unlock: MAX';
-
-    return [header, ...availableLines, nextLocked];
-  });
-
-  return `Faction task board\n${lines.join('\n')}`;
-}
-
 function formatFactionShopItemLine(item: FactionShopItem): string {
   return `  • ${item.name} (R${item.requiredRank}) — ${item.cost.credits}c/${item.cost.parts}p`;
 }
@@ -646,15 +626,19 @@ export function formatFactionShopResponse(standings: FactionStanding[], engine: 
   return `Faction shop inventory\n${lines.join('\n')}`;
 }
 
-export function formatFactionContractsResponse(standings: FactionStanding[]): string {
+export function formatFactionContractsResponse(
+  standings: FactionStanding[],
+  era: Player['currentEra'],
+  engine: GameEngine,
+): string {
   if (standings.length === 0) {
     return 'No faction standing found yet. Complete contracts to unlock contract tiers.';
   }
 
   const lines = sortFactionStandings(standings).map((entry) => {
-    const availableTier = entry.rank >= 3 ? 'Tier III' : entry.rank >= 2 ? 'Tier II' : 'Tier I';
-    const nextUnlock = entry.rank >= 3 ? 'MAX' : `Rank ${entry.rank + 1}`;
-    return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextUnlock}`;
+    const { availableTier, nextRankUnlock, eraGate } = engine.factionContractTierFor(entry.rank, era);
+    const gateSuffix = eraGate ? ` | Era gate: ${eraGate.era} max ${eraGate.maximumTier}` : '';
+    return `- **${factionLabel(entry.faction)}** | Available ${availableTier} contracts | Next unlock: ${nextRankUnlock}${gateSuffix}`;
   });
 
   return `Faction contract board\n${lines.join('\n')}`;

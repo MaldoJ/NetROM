@@ -1,4 +1,4 @@
-import type { DiscoveryType, Faction, NodeArchetype, TaskScope } from '../domain/types.js';
+import type { DiscoveryType, Era, Faction, NodeArchetype, TaskScope } from '../domain/types.js';
 import type {
   Collectible,
   Player,
@@ -40,6 +40,24 @@ export type FactionTaskDefinition = {
     parts: number;
     factionReputation: number;
   };
+};
+
+export type FactionShopItem = {
+  id: string;
+  faction: Faction;
+  name: string;
+  requiredRank: number;
+  cost: {
+    credits: number;
+    parts: number;
+  };
+};
+
+export type ContractTier = 'Tier I' | 'Tier II' | 'Tier III';
+
+export type EraContractUnlock = {
+  era: Era;
+  maximumTier: ContractTier;
 };
 
 const FACTION_TASK_BOARD: Record<Faction, FactionTaskDefinition[]> = {
@@ -122,6 +140,87 @@ const FACTION_TASK_BOARD: Record<Faction, FactionTaskDefinition[]> = {
     },
   ],
 };
+
+const FACTION_SHOP_BOARD: Record<Faction, FactionShopItem[]> = {
+  HELIX_SYNDICATE: [
+    {
+      id: 'helix_shop_modem_amp_i',
+      faction: 'HELIX_SYNDICATE',
+      name: 'Helix Modem Amplifier I',
+      requiredRank: 1,
+      cost: { credits: 120, parts: 8 },
+    },
+    {
+      id: 'helix_shop_modem_amp_ii',
+      faction: 'HELIX_SYNDICATE',
+      name: 'Helix Modem Amplifier II',
+      requiredRank: 2,
+      cost: { credits: 180, parts: 12 },
+    },
+    {
+      id: 'helix_shop_security_kernel',
+      faction: 'HELIX_SYNDICATE',
+      name: 'Helix Security Kernel',
+      requiredRank: 3,
+      cost: { credits: 260, parts: 18 },
+    },
+  ],
+  NULL_SECTOR: [
+    {
+      id: 'null_shop_siphon_suite',
+      faction: 'NULL_SECTOR',
+      name: 'Null Siphon Suite',
+      requiredRank: 1,
+      cost: { credits: 115, parts: 9 },
+    },
+    {
+      id: 'null_shop_route_masker',
+      faction: 'NULL_SECTOR',
+      name: 'Null Route Masker',
+      requiredRank: 2,
+      cost: { credits: 175, parts: 13 },
+    },
+    {
+      id: 'null_shop_void_carapace',
+      faction: 'NULL_SECTOR',
+      name: 'Null Void Carapace',
+      requiredRank: 3,
+      cost: { credits: 255, parts: 19 },
+    },
+  ],
+  LATTICE_COLLECTIVE: [
+    {
+      id: 'lattice_shop_mesh_lens',
+      faction: 'LATTICE_COLLECTIVE',
+      name: 'Lattice Mesh Lens',
+      requiredRank: 1,
+      cost: { credits: 118, parts: 8 },
+    },
+    {
+      id: 'lattice_shop_beacon_array',
+      faction: 'LATTICE_COLLECTIVE',
+      name: 'Lattice Beacon Array',
+      requiredRank: 2,
+      cost: { credits: 178, parts: 12 },
+    },
+    {
+      id: 'lattice_shop_consensus_core',
+      faction: 'LATTICE_COLLECTIVE',
+      name: 'Lattice Consensus Core',
+      requiredRank: 3,
+      cost: { credits: 252, parts: 18 },
+    },
+  ],
+};
+
+const ERA_MAX_CONTRACT_TIER: Record<Era, ContractTier> = {
+  DIAL_UP: 'Tier I',
+  BULLETIN_RELAY: 'Tier II',
+  EARLY_INTERNET: 'Tier III',
+  MODERN_GRID: 'Tier III',
+};
+
+const CONTRACT_TIERS: ContractTier[] = ['Tier I', 'Tier II', 'Tier III'];
 
 export class GameEngine {
   constructor(private readonly random: RandomSource = new MathRandomSource()) {}
@@ -216,6 +315,24 @@ export class GameEngine {
     const locked = board.filter((task) => task.requiredRank > rank);
 
     return { available, locked };
+  }
+
+  listFactionShopItems(faction: Faction, rank: number): { available: FactionShopItem[]; locked: FactionShopItem[] } {
+    const board = FACTION_SHOP_BOARD[faction] ?? [];
+    const available = board.filter((item) => item.requiredRank <= rank);
+    const locked = board.filter((item) => item.requiredRank > rank);
+
+    return { available, locked };
+  }
+
+  factionContractTierFor(rank: number, era: Era): { availableTier: ContractTier; nextRankUnlock: string; eraGate: EraContractUnlock | null } {
+    const rankTier: ContractTier = rank >= 3 ? 'Tier III' : rank >= 2 ? 'Tier II' : 'Tier I';
+    const eraTier = ERA_MAX_CONTRACT_TIER[era];
+    const availableTier = CONTRACT_TIERS[Math.min(CONTRACT_TIERS.indexOf(rankTier), CONTRACT_TIERS.indexOf(eraTier))] ?? 'Tier I';
+    const nextRankUnlock = rank >= 3 ? 'MAX' : `Rank ${rank + 1}`;
+    const eraGate = CONTRACT_TIERS.indexOf(rankTier) > CONTRACT_TIERS.indexOf(eraTier) ? { era, maximumTier: eraTier } : null;
+
+    return { availableTier, nextRankUnlock, eraGate };
   }
 
   createActiveTask(scope: TaskScope, now: Date = new Date()): TaskDefinition {
