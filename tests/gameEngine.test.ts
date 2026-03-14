@@ -52,20 +52,6 @@ describe('GameEngine', () => {
     expect(rankThree.available).toHaveLength(3);
     expect(rankThree.locked).toHaveLength(0);
   });
-
-
-  it('lists faction shop items split by available and locked rank bands', () => {
-    const engine = new GameEngine();
-
-    const rankOne = engine.listFactionShopItems('NULL_SECTOR', 1);
-    expect(rankOne.available).toHaveLength(1);
-    expect(rankOne.available[0]?.requiredRank).toBe(1);
-    expect(rankOne.locked).toHaveLength(2);
-
-    const rankThree = engine.listFactionShopItems('NULL_SECTOR', 3);
-    expect(rankThree.available).toHaveLength(3);
-    expect(rankThree.locked).toHaveLength(0);
-  });
   it('rollCollectible returns deterministic collectible when roll succeeds', () => {
     const engine = new GameEngine(new SequenceRandomSource([0.1, 0.0, 0.6, 0.4]));
 

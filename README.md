@@ -14,7 +14,7 @@ This repository now includes the Phase 1 MVP foundation plus the current Phase 2
 - Task progression + reward claiming loop (`.sh tasks`, `.sh tasks claim`)
 - Collectible progression surfaces (`.sh collection`, profile collectible stats)
 - Session recovery workflow (`.sh resume`)
-- Faction standing + progression surfaces (`.sh factions`, `.sh factions tasks`, `.sh factions shop`, `.sh factions contracts`) with rank-gated task + shop inventory previews
+- Faction standing + progression surfaces (`.sh factions`, `.sh factions tasks`, `.sh factions shop`, `.sh factions contracts`)
 - Contract-side faction reputation payouts from successful claim loops
 - Design docs for architecture, command UX, and phased roadmap
 

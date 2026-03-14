@@ -42,19 +42,6 @@ export type FactionTaskDefinition = {
   };
 };
 
-
-export type FactionShopItem = {
-  id: string;
-  faction: Faction;
-  name: string;
-  description: string;
-  requiredRank: number;
-  cost: {
-    credits: number;
-    parts: number;
-  };
-};
-
 const FACTION_TASK_BOARD: Record<Faction, FactionTaskDefinition[]> = {
   HELIX_SYNDICATE: [
     {
@@ -132,88 +119,6 @@ const FACTION_TASK_BOARD: Record<Faction, FactionTaskDefinition[]> = {
       objective: 'Bring 8 encrypted civic nodes online under consensus timing.',
       requiredRank: 3,
       reward: { credits: 215, parts: 13, factionReputation: 31 },
-    },
-  ],
-};
-
-
-const FACTION_SHOP_BOARD: Record<Faction, FactionShopItem[]> = {
-  HELIX_SYNDICATE: [
-    {
-      id: 'helix_modem_boost_i',
-      faction: 'HELIX_SYNDICATE',
-      name: 'Helix Modem Amplifier I',
-      description: '+1 bandwidth calibration rig for relay sweeps.',
-      requiredRank: 1,
-      cost: { credits: 220, parts: 10 },
-    },
-    {
-      id: 'helix_modem_boost_ii',
-      faction: 'HELIX_SYNDICATE',
-      name: 'Helix Modem Amplifier II',
-      description: '+2 bandwidth overclock package for contract chains.',
-      requiredRank: 2,
-      cost: { credits: 360, parts: 16 },
-    },
-    {
-      id: 'helix_security_kernel',
-      faction: 'HELIX_SYNDICATE',
-      name: 'Helix Security Kernel',
-      description: 'Hardened relay firmware reducing breach fallout.',
-      requiredRank: 3,
-      cost: { credits: 540, parts: 24 },
-    },
-  ],
-  NULL_SECTOR: [
-    {
-      id: 'null_cache_tapper',
-      faction: 'NULL_SECTOR',
-      name: 'Cache Tapper Suite',
-      description: 'Stealth scanner package tuned for abandoned caches.',
-      requiredRank: 1,
-      cost: { credits: 210, parts: 9 },
-    },
-    {
-      id: 'null_ghost_router',
-      faction: 'NULL_SECTOR',
-      name: 'Ghost Router Array',
-      description: 'Low-signature routing stack for covert handshakes.',
-      requiredRank: 2,
-      cost: { credits: 350, parts: 15 },
-    },
-    {
-      id: 'null_void_splicer',
-      faction: 'NULL_SECTOR',
-      name: 'Void Splicer Matrix',
-      description: 'Blacksite-grade splice tool for deep-node infiltrations.',
-      requiredRank: 3,
-      cost: { credits: 525, parts: 23 },
-    },
-  ],
-  LATTICE_COLLECTIVE: [
-    {
-      id: 'lattice_mesh_patcher',
-      faction: 'LATTICE_COLLECTIVE',
-      name: 'Mesh Patcher Kit',
-      description: 'Stability kit for civic mesh maintenance contracts.',
-      requiredRank: 1,
-      cost: { credits: 215, parts: 11 },
-    },
-    {
-      id: 'lattice_beacon_array',
-      faction: 'LATTICE_COLLECTIVE',
-      name: 'Beacon Alignment Array',
-      description: 'Precision synchronization hardware for beacon lanes.',
-      requiredRank: 2,
-      cost: { credits: 355, parts: 17 },
-    },
-    {
-      id: 'lattice_consensus_core',
-      faction: 'LATTICE_COLLECTIVE',
-      name: 'Consensus Core Module',
-      description: 'Collective-grade coordination core for high-tier nodes.',
-      requiredRank: 3,
-      cost: { credits: 535, parts: 25 },
     },
   ],
 };
@@ -309,14 +214,6 @@ export class GameEngine {
     const board = FACTION_TASK_BOARD[faction] ?? [];
     const available = board.filter((task) => task.requiredRank <= rank);
     const locked = board.filter((task) => task.requiredRank > rank);
-
-    return { available, locked };
-  }
-
-  listFactionShopItems(faction: Faction, rank: number): { available: FactionShopItem[]; locked: FactionShopItem[] } {
-    const board = FACTION_SHOP_BOARD[faction] ?? [];
-    const available = board.filter((item) => item.requiredRank <= rank);
-    const locked = board.filter((item) => item.requiredRank > rank);
 
     return { available, locked };
   }
