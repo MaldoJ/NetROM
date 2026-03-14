@@ -14,6 +14,6 @@ export function taskLabel(taskKey: TaskKey): string {
 
 export function formatTaskProgressLabel(task: TaskDefinition, progressValue: number): string {
   const clamped = Math.max(0, Math.min(progressValue, task.objectiveValue));
-  const percent = Math.floor((clamped / task.objectiveValue) * 100);
+  const percent = task.objectiveValue <= 0 ? 0 : Math.floor((clamped / task.objectiveValue) * 100);
   return `${taskLabel(task.key)} ${clamped}/${task.objectiveValue} (${percent}%)`;
 }
