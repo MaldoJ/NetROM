@@ -160,7 +160,7 @@ describe('formatFactionResponse', () => {
 
 describe('formatFactionShopResponse', () => {
   it('shows locked preview state when no factions are initialized', () => {
-    const message = formatFactionShopResponse([]);
+    const message = formatFactionShopResponse([], new GameEngine());
 
     expect(message).toContain('No faction standing found yet');
   });
@@ -168,12 +168,14 @@ describe('formatFactionShopResponse', () => {
   it('renders rank-gated access by faction standing', () => {
     const message = formatFactionShopResponse([
       { faction: 'NULL_SECTOR', reputation: 15, rank: 1 },
-      { faction: 'HELIX_SYNDICATE', reputation: 45, rank: 2 },
-    ]);
+      { faction: 'HELIX_SYNDICATE', reputation: 145, rank: 2 },
+    ], new GameEngine());
 
-    expect(message).toContain('Faction shop preview');
-    expect(message).toContain('**Helix Syndicate** | Rank 2 | Access UNLOCKED');
-    expect(message).toContain('**Null Sector** | Rank 1 | Access LOCKED');
+    expect(message).toContain('Faction shop inventory');
+    expect(message).toContain('**Helix Syndicate** | Rank 2 | Available stock: 2');
+    expect(message).toContain('Helix Modem Amplifier II (R2)');
+    expect(message).toContain('Next stock unlock: Rank 3 — Helix Security Kernel');
+    expect(message).toContain('**Null Sector** | Rank 1 | Available stock: 1');
   });
 
 
@@ -181,7 +183,7 @@ describe('formatFactionShopResponse', () => {
     const message = formatFactionShopResponse([
       { faction: 'NULL_SECTOR', reputation: 90, rank: 2 },
       { faction: 'HELIX_SYNDICATE', reputation: 90, rank: 2 },
-    ]);
+    ], new GameEngine());
 
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
