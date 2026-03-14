@@ -155,6 +155,12 @@ describe('formatFactionResponse', () => {
 
     expect(message.indexOf('**Helix Syndicate**')).toBeLessThan(message.indexOf('**Null Sector**'));
   });
+
+  it('shows max-rank copy when faction rank cap is reached', () => {
+    const message = formatFactionResponse([{ faction: 'HELIX_SYNDICATE', reputation: 350, rank: 3 }]);
+
+    expect(message).toContain('**Helix Syndicate** | Rep 350 | Rank 3 | Next rank: MAX');
+  });
 });
 
 

@@ -566,6 +566,7 @@ function factionLabel(faction: Faction): string {
 }
 
 type FactionStanding = { faction: Faction; reputation: number; rank: number };
+const MAX_FACTION_RANK = 3;
 
 function reputationToNextRank(reputation: number): number {
   const currentRankFloor = Math.floor(reputation / 100) * 100;
@@ -650,6 +651,10 @@ export function formatFactionResponse(standings: FactionStanding[]): string {
   }
 
   const lines = sortFactionStandings(standings).map((entry) => {
+    if (entry.rank >= MAX_FACTION_RANK) {
+      return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank: MAX`;
+    }
+
     const repNeeded = reputationToNextRank(entry.reputation);
     return `- **${factionLabel(entry.faction)}** | Rep ${entry.reputation} | Rank ${entry.rank} | Next rank in ${repNeeded} rep`;
   });
