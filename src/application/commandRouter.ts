@@ -6,6 +6,7 @@ export type ShellCommand =
   | '.sh collection'
   | '.sh leaderboard'
   | '.sh factions'
+  | '.sh factions tasks'
   | '.sh factions shop'
   | '.sh factions contracts'
   | '.sh resume'
@@ -40,6 +41,7 @@ export function isSupportedCommand(content: string): content is ShellCommand {
     '.sh collection',
     '.sh leaderboard',
     '.sh factions',
+    '.sh factions tasks',
     '.sh factions shop',
     '.sh factions contracts',
     '.sh resume',

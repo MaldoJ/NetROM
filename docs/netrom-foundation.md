@@ -144,6 +144,6 @@ With the criteria above locked and met, the project is ready to enter Phase 2 (p
 
 - Added persistent player-faction reputation rows for Helix Syndicate, Null Sector, and Lattice Collective.
 - Added `.sh factions` command surface to view faction standings in-game.
-- Added `.sh factions shop` and `.sh factions contracts` previews to expose rank-gated progression surfaces.
+- Added `.sh factions tasks` board preview, rank-gated `.sh factions shop` inventory preview, and `.sh factions contracts` view to expose progression surfaces.
 - Claim loop now awards faction contract reputation and applies rank progression in persistent standings.
-- Next implementation targets: faction task lines, unlockable shop inventory, and era transition contract gates.
+- Next implementation target: era transition contract gates.

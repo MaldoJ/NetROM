@@ -6,7 +6,7 @@ import {
   type ThreadChannel,
   type TextChannel,
 } from 'discord.js';
-import { GameEngine } from '../../application/gameEngine.js';
+import { GameEngine, type FactionShopItem, type FactionTaskDefinition } from '../../application/gameEngine.js';
 import { normalizeCommand } from '../../application/commandRouter.js';
 import {
   collectiblePrestigeScore,
@@ -33,6 +33,7 @@ const HELP_TEXT = [
   '.sh collection',
   '.sh leaderboard',
   '.sh factions',
+  '.sh factions tasks',
   '.sh factions shop',
   '.sh factions contracts',
   '.sh resume',
@@ -166,10 +167,17 @@ export function createDiscordBotClient(): Client {
         return;
       }
 
+      if (content === '.sh factions tasks') {
+        await factionReputation.ensurePlayerRows(existingPlayer.id);
+        const standings = await factionReputation.listByPlayerId(existingPlayer.id);
+        await message.reply(formatFactionTasksResponse(standings, engine));
+        return;
+      }
+
       if (content === '.sh factions shop') {
         await factionReputation.ensurePlayerRows(existingPlayer.id);
         const standings = await factionReputation.listByPlayerId(existingPlayer.id);
-        await message.reply(formatFactionShopResponse(standings));
+        await message.reply(formatFactionShopResponse(standings, engine));
         return;
       }
 
@@ -570,17 +578,52 @@ function sortFactionStandings(standings: FactionStanding[]): FactionStanding[] {
     .sort((left, right) => right.reputation - left.reputation || left.faction.localeCompare(right.faction));
 }
 
-export function formatFactionShopResponse(standings: FactionStanding[]): string {
+function formatFactionTaskLine(task: FactionTaskDefinition): string {
+  return `  • ${task.title} (R${task.requiredRank}) — ${task.reward.credits}c/${task.reward.parts}p/+${task.reward.factionReputation} rep`;
+}
+
+export function formatFactionTasksResponse(standings: FactionStanding[], engine: GameEngine): string {
   if (standings.length === 0) {
-    return 'No faction standing found yet. Complete contracts to unlock faction shop previews.';
+    return 'No faction standing found yet. Complete contracts to unlock faction task lines.';
   }
 
-  const lines = sortFactionStandings(standings).map((entry) => {
-    const lockStatus = entry.rank >= 2 ? 'UNLOCKED' : 'LOCKED';
-    return `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Access ${lockStatus} (requires rank 2)`;
+  const lines = sortFactionStandings(standings).flatMap((entry) => {
+    const { available, locked } = engine.listFactionTasks(entry.faction, entry.rank);
+    const header = `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Available tasks: ${available.length}`;
+    const availableLines =
+      available.length === 0
+        ? ['  • No tasks available yet.']
+        : available.map((task) => formatFactionTaskLine(task));
+    const nextLocked = locked[0] ? `  • Next unlock: Rank ${locked[0].requiredRank} — ${locked[0].title}` : '  • Next unlock: MAX';
+
+    return [header, ...availableLines, nextLocked];
   });
 
-  return `Faction shop preview\n${lines.join('\n')}`;
+  return `Faction task board\n${lines.join('\n')}`;
+}
+
+function formatFactionShopItemLine(item: FactionShopItem): string {
+  return `  • ${item.name} (R${item.requiredRank}) — ${item.cost.credits}c/${item.cost.parts}p`;
+}
+
+export function formatFactionShopResponse(standings: FactionStanding[], engine: GameEngine): string {
+  if (standings.length === 0) {
+    return 'No faction standing found yet. Complete contracts to unlock faction shop inventory.';
+  }
+
+  const lines = sortFactionStandings(standings).flatMap((entry) => {
+    const { available, locked } = engine.listFactionShopItems(entry.faction, entry.rank);
+    const header = `- **${factionLabel(entry.faction)}** | Rank ${entry.rank} | Available stock: ${available.length}`;
+    const availableLines =
+      available.length === 0
+        ? ['  • No shop stock available yet.']
+        : available.map((item) => formatFactionShopItemLine(item));
+    const nextLocked = locked[0] ? `  • Next stock unlock: Rank ${locked[0].requiredRank} — ${locked[0].name}` : '  • Next stock unlock: MAX';
+
+    return [header, ...availableLines, nextLocked];
+  });
+
+  return `Faction shop inventory\n${lines.join('\n')}`;
 }
 
 export function formatFactionContractsResponse(standings: FactionStanding[]): string {
